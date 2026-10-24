@@ -5,6 +5,8 @@ Sản phẩm: Website thương mại điện tử cho một cửa hàng
 Nhóm: 5 thành viên — thời gian kế hoạch: 8 tuần  
 Tài liệu liên quan: [Mô tả website](./MO-TA-WEBSITE.md)
 
+Bộ tài liệu đi kèm: [hướng dẫn đọc](../README.md), [đặc tả nghiệp vụ](DAC-TA-NGHIEP-VU.md), [giao diện](THIET-KE-GIAO-DIEN.md), [workflow](THIET-KE-LUONG-XU-LY.md), [HTTP/OpenAPI](contracts/HTTP-API.md), [message](contracts/MESSAGES.md), [kế hoạch](KE-HOACH-THUC-HIEN.md), [kiểm thử](KE-HOACH-KIEM-THU.md). Phần đặc tả mới bổ sung quote và chi tiết API quản trị; dùng hợp đồng trong `contracts/` khi triển khai, danh sách endpoint bên dưới là bản tổng quan.
+
 ## 1. Mục đích và trạng thái tài liệu
 
 Tài liệu này chuyển mô tả website thành một thiết kế hệ thống ở mức khái niệm: hệ thống gồm những phần nào, ai chịu trách nhiệm cho dữ liệu nào, các phần phối hợp thế nào và MVP dừng ở đâu.
@@ -142,8 +144,8 @@ Cơ chế bắt buộc:
 | `identity_db` | `users`, `refresh_sessions` |
 | `catalog_db` | `products`, `categories`, `product_images` |
 | `inventory_db` | `stock_items`, `reservations`, `reservation_items`, `inventory_operations`, `stock_movements`, `processed_messages`, `outbox_messages` |
-| `orders_db` | `orders`, `order_items`, `order_status_history`, `order_workflows`, `idempotency_requests`, `processed_messages`, `outbox_messages` |
-| `payments_db` | `payment_attempts`, `refund_attempts`, `payment_status_history`, `processed_messages`, `outbox_messages` |
+| `orders_db` | `orders`, `order_items`, `order_status_history`, `order_workflows`, `idempotency_requests`, `order_action_requests`, `processed_messages`, `outbox_messages` |
+| `payments_db` | `payment_attempts`, `refund_attempts`, `payment_status_history`, `demo_configuration`, `demo_configuration_history`, `processed_messages`, `outbox_messages` |
 
 Mỗi service có Prisma schema, migration và credentials riêng; không chia sẻ ORM model hoặc Prisma client giữa các service. Không foreign key xuyên database.
 
@@ -601,6 +603,55 @@ Không có một transaction chung bao trùm 5 database. Workflow lưu tiến đ
 **Ví dụ:** một đơn mua 2 chuột giá 200.000 đồng và phí ship 30.000 đồng có subtotal 400.000, total 430.000. Order lưu giá snapshot; Inventory giữ 2 đơn vị; Payment ghi amount 430.000. Nếu thanh toán mô phỏng thất bại, giữ lịch sử FAILED, giải phóng 2 đơn vị và kết thúc hủy; không xóa dấu vết payment. Nếu thanh toán thành công rồi hủy trước giao, refund là 430.000 đồng, bao gồm phí ship chưa thực hiện.
 
 **Những bảng không có trong MVP:** carts/cart_items phía server, addresses, roles/permissions động, product_variants, vouchers, shipments tích hợp, notifications, seller_accounts. Chỉ bổ sung khi feature tương ứng được duyệt.
+
+#### F.23. Bổ sung để khớp hợp đồng HTTP và màn hình demo
+
+Các bảng sau là đề xuất chi tiết khi viết bộ hợp đồng 0.1. Cần đưa vào migration khi triển khai các API tương ứng.
+
+**orders_db — order_action_requests:** lưu việc hủy/xác nhận/bàn giao/hoàn thành/ghi ngoại lệ đã tiếp nhận qua HTTP, để replay không phụ thuộc RAM hoặc chỉ dựa vào trạng thái hiện tại.
+
+| Field | Kiểu / yêu cầu | Ý nghĩa |
+| --- | --- | --- |
+| `id` | uuid, PK | Mã yêu cầu hành động |
+| `order_id` | uuid, FK orders.id | Đơn được tác động |
+| `actor_id` | uuid, tham chiếu ngoài | Người gửi đã xác thực |
+| `action` | varchar(30) | CANCEL, CONFIRM, DISPATCH, COMPLETE, RECORD_EXCEPTION |
+| `idempotency_key` | varchar(128) | Key HTTP |
+| `request_hash` | varchar(64) | Hash payload chuẩn hóa |
+| `response_status` | integer | Mã HTTP tiếp nhận |
+| `response_body` | jsonb | Kết quả tiếp nhận cũ; trạng thái hiện tại đọc qua GET |
+| `created_at` | timestamptz | Thời điểm nhận |
+
+UQ(actor_id, order_id, action, idempotency_key). Insert cùng transaction đổi trạng thái/workflow/history và tạo outbox nếu có. Trùng key khác hash trả 409. Không ghi thành công trước khi transaction commit. Validation/state conflict trước tiếp nhận chưa chiếm key.
+
+**payments_db — demo_configuration:** cấu hình duy nhất của môi trường demo, không chứa kết quả giao dịch cụ thể.
+
+| Field | Kiểu / yêu cầu | Ý nghĩa |
+| --- | --- | --- |
+| `id` | integer, PK, CHECK = 1 | Một cấu hình hiện hành |
+| `payment_scenario` | varchar(30) | SUCCESS, FAILURE, DELAYED_SUCCESS, DELAYED_FAILURE |
+| `refund_scenario` | varchar(30) | SUCCESS, DELAYED_SUCCESS, FAIL_UNTIL_RETRY |
+| `delay_seconds` | integer, CHECK 0..300 | Độ trễ mô phỏng |
+| `version` | integer | Tăng khi thay đổi |
+| `updated_by` | uuid, NULL khi seed, tham chiếu ngoài | ADMIN thay đổi; hệ thống để NULL lúc khởi tạo |
+| `updated_at` | timestamptz | Thời điểm cập nhật |
+
+Payment/refund chụp scenario lúc tạo, thay đổi config chỉ tác động record mới. FAIL_UNTIL_RETRY nghĩa là lần đầu hoàn tiền báo lỗi, lần thử kế tiếp cùng refundId có thể hoàn tất; không cần đổi config để sửa giao dịch cũ. Production tắt hoàn toàn route demo. Khởi tạo config qua seed với actor hệ thống; updated_by có thể NULL duy nhất trong lần seed trước thao tác quản trị đầu tiên.
+
+**payments_db — demo_configuration_history:** lưu thay đổi cấu hình để biết vì sao demo có kết quả khác nhau.
+
+| Field | Kiểu / yêu cầu | Ý nghĩa |
+| --- | --- | --- |
+| `id` | uuid, PK | Mã lịch sử |
+| `configuration_id` | integer, FK demo_configuration.id | Cấu hình |
+| `version` | integer | Phiên bản mới |
+| `snapshot` | jsonb | Ba giá trị scenario/delay mới, schema cố định |
+| `actor_id` | uuid, NULL, tham chiếu ngoài | ADMIN hoặc NULL khi seed hệ thống |
+| `created_at` | timestamptz | Thời điểm |
+
+UQ(configuration_id, version). Cập nhật configuration và history cùng transaction. Không ghi token vào snapshot.
+
+Khởi tạo stock_item dùng product_id duy nhất, tồn 0: gửi lại sản phẩm đã khởi tạo trả record hiện tại nếu cấu hình khớp, không reset tồn. Adjustment sử dụng inventory_operations.operation_id được ánh xạ ổn định từ actor + scope + Idempotency-Key; request_hash phải gồm delta/lý do/version. Không đổi UUID ngẫu nhiên mỗi lần retry. Cơ chế ánh xạ này cần kiểm tra collision/unique và test replay khi triển khai.
 
 ### G. Xác thực, ảnh và cấu hình
 

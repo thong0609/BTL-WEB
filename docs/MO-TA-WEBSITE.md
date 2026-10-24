@@ -1,5 +1,7 @@
 # Mô tả sản phẩm: Website bán hàng cho một cửa hàng
 
+Đọc kèm [đặc tả nghiệp vụ](DAC-TA-NGHIEP-VU.md), [thiết kế giao diện](THIET-KE-GIAO-DIEN.md) và [hướng dẫn đọc cả bộ tài liệu](../README.md). Quy tắc chi tiết và các ngoại lệ dùng use case làm nguồn chính, tránh mỗi thành viên tự suy diễn từ danh sách chức năng.
+
 Ngày lập: 24/10/2026  
 Nhóm thực hiện: 5 thành viên  
 Thời gian dự kiến: 8 tuần  

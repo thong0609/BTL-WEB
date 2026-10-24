@@ -1,0 +1,2725 @@
+# OpenAPI 3.1 — proposal, not a running API
+"openapi": "3.1.0"
+"info":
+  "title": "Single Store Ecommerce — MVP API"
+  "version": "0.1.0"
+  "description": "Design contract only; not implemented. Five business services. Money as integer VND strings. See HTTP-API.md for role, state, CSRF and idempotency semantics."
+"servers":
+  -
+    "url": "/api/v1"
+    "description": "Same-origin gateway; no deployed server claimed"
+"paths":
+  "/auth/register":
+    "post":
+      "operationId": "post_auth_register"
+      "tags":
+        - "auth"
+      "summary": "Register CUSTOMER only"
+      "security": []
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/Register"
+      "responses":
+        "201":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/User"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/auth/login":
+    "post":
+      "operationId": "post_auth_login"
+      "tags":
+        - "auth"
+      "summary": "Login; sets HttpOnly refresh cookie"
+      "security": []
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/Login"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Token"
+          "headers":
+            "Set-Cookie":
+              "description": "Refresh cookie; HttpOnly, Secure on HTTPS, appropriate SameSite; logout expires it."
+              "schema":
+                "type": "string"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/auth/refresh":
+    "post":
+      "operationId": "post_auth_refresh"
+      "tags":
+        - "auth"
+      "summary": "refresh using cookie with Origin/CSRF validation"
+      "security":
+        -
+          "refreshCookie": []
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Token"
+          "headers":
+            "Set-Cookie":
+              "description": "Refresh cookie; HttpOnly, Secure on HTTPS, appropriate SameSite; logout expires it."
+              "schema":
+                "type": "string"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/auth/logout":
+    "post":
+      "operationId": "post_auth_logout"
+      "tags":
+        - "auth"
+      "summary": "logout using cookie with Origin/CSRF validation"
+      "security":
+        -
+          "refreshCookie": []
+      "responses":
+        "204":
+          "description": "Success"
+          "headers":
+            "Set-Cookie":
+              "description": "Refresh cookie; HttpOnly, Secure on HTTPS, appropriate SameSite; logout expires it."
+              "schema":
+                "type": "string"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/users/me":
+    "get":
+      "operationId": "get_users_me"
+      "tags":
+        - "users"
+      "summary": "Current user profile"
+      "security":
+        -
+          "bearerAuth": []
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/User"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/products":
+    "get":
+      "operationId": "get_products"
+      "tags":
+        - "products"
+      "summary": "List ACTIVE products only"
+      "security": []
+      "parameters":
+        -
+          "name": "page"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "integer"
+            "minimum": 1
+            "default": 1
+        -
+          "name": "pageSize"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "integer"
+            "minimum": 1
+            "maximum": 100
+            "default": 20
+        -
+          "name": "q"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+            "maxLength": 200
+        -
+          "name": "categoryId"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+            "format": "uuid"
+        -
+          "name": "minPrice"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+            "pattern": "^[0-9]+$"
+            "example": "430000"
+        -
+          "name": "maxPrice"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+            "pattern": "^[0-9]+$"
+            "example": "430000"
+        -
+          "name": "sort"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+            "enum":
+              - "NEWEST"
+              - "PRICE_ASC"
+              - "PRICE_DESC"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/ProductPage"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/products/{id}":
+    "get":
+      "operationId": "get_products_id"
+      "tags":
+        - "products"
+      "summary": "ACTIVE product details"
+      "security": []
+      "parameters":
+        -
+          "name": "id"
+          "in": "path"
+          "required": true
+          "schema":
+            "type": "string"
+            "format": "uuid"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Product"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/categories":
+    "get":
+      "operationId": "get_categories"
+      "tags":
+        - "categories"
+      "summary": "Visible navigation categories"
+      "security": []
+      "parameters":
+        -
+          "name": "page"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "integer"
+            "minimum": 1
+            "default": 1
+        -
+          "name": "pageSize"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "integer"
+            "minimum": 1
+            "maximum": 100
+            "default": 20
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/CategoryPage"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/orders/quote":
+    "post":
+      "operationId": "post_orders_quote"
+      "tags":
+        - "orders"
+      "summary": "Current prices and fee; reserves nothing"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "CUSTOMER"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/QuoteInput"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Quote"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/orders":
+    "post":
+      "operationId": "post_orders"
+      "tags":
+        - "orders"
+      "summary": "Create once; no client-selected payment result"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "CUSTOMER"
+      "parameters":
+        -
+          "name": "Idempotency-Key"
+          "in": "header"
+          "required": true
+          "schema":
+            "type": "string"
+            "minLength": 1
+            "maxLength": 128
+          "description": "Stable across retries of the same actor/scope/payload. Different payload with same key returns 409."
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/CreateOrder"
+      "responses":
+        "202":
+          "description": "Accepted; poll resource for business result."
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/OrderAccepted"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+    "get":
+      "operationId": "get_orders"
+      "tags":
+        - "orders"
+      "summary": "Only caller orders, including PROCESSING/REJECTED"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "CUSTOMER"
+      "parameters":
+        -
+          "name": "page"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "integer"
+            "minimum": 1
+            "default": 1
+        -
+          "name": "pageSize"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "integer"
+            "minimum": 1
+            "maximum": 100
+            "default": 20
+        -
+          "name": "status"
+          "in": "query"
+          "required": false
+          "schema":
+            "$ref": "#/components/schemas/OrderStatus"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/OrderPage"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/orders/{id}":
+    "get":
+      "operationId": "get_orders_id"
+      "tags":
+        - "orders"
+      "summary": "Owner only; 404 for other customer's order"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "CUSTOMER"
+      "parameters":
+        -
+          "name": "id"
+          "in": "path"
+          "required": true
+          "schema":
+            "type": "string"
+            "format": "uuid"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Order"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/orders/{id}/cancel":
+    "post":
+      "operationId": "post_orders_id_cancel"
+      "tags":
+        - "orders"
+      "summary": "Owner cancellation; inventory and payment compensation required"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "CUSTOMER"
+      "parameters":
+        -
+          "name": "id"
+          "in": "path"
+          "required": true
+          "schema":
+            "type": "string"
+            "format": "uuid"
+        -
+          "name": "Idempotency-Key"
+          "in": "header"
+          "required": true
+          "schema":
+            "type": "string"
+            "minLength": 1
+            "maxLength": 128
+          "description": "Stable across retries of the same actor/scope/payload. Different payload with same key returns 409."
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/Reason"
+      "responses":
+        "202":
+          "description": "Accepted; poll resource for business result."
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/ActionResult"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/payments/{id}":
+    "get":
+      "operationId": "get_payments_id"
+      "tags":
+        - "payments"
+      "summary": "Owner only, determined from trusted stored customerId"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "CUSTOMER"
+      "parameters":
+        -
+          "name": "id"
+          "in": "path"
+          "required": true
+          "schema":
+            "type": "string"
+            "format": "uuid"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Payment"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/products":
+    "get":
+      "operationId": "get_admin_products"
+      "tags":
+        - "Admin"
+      "summary": "Admin products including non-public"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "page"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "integer"
+            "minimum": 1
+            "default": 1
+        -
+          "name": "pageSize"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "integer"
+            "minimum": 1
+            "maximum": 100
+            "default": 20
+        -
+          "name": "q"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+            "maxLength": 200
+        -
+          "name": "categoryId"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+            "format": "uuid"
+        -
+          "name": "minPrice"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+            "pattern": "^[0-9]+$"
+            "example": "430000"
+        -
+          "name": "maxPrice"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+            "pattern": "^[0-9]+$"
+            "example": "430000"
+        -
+          "name": "sort"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+            "enum":
+              - "NEWEST"
+              - "PRICE_ASC"
+              - "PRICE_DESC"
+        -
+          "name": "status"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+            "enum":
+              - "DRAFT"
+              - "ACTIVE"
+              - "DISCONTINUED"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/ProductPage"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+    "post":
+      "operationId": "post_admin_products"
+      "tags":
+        - "Admin"
+      "summary": "Create product; stock initialization is separate"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/ProductInput"
+      "responses":
+        "201":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Product"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/products/{id}":
+    "patch":
+      "operationId": "patch_admin_products_id"
+      "tags":
+        - "Admin"
+      "summary": "Patch fields and optional image order with expectedVersion"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "id"
+          "in": "path"
+          "required": true
+          "schema":
+            "type": "string"
+            "format": "uuid"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/ProductPatch"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Product"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/products/{id}/images":
+    "post":
+      "operationId": "post_admin_products_id_images"
+      "tags":
+        - "Admin"
+      "summary": "Validated raster image, max 5 MiB, max 5 per product"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "id"
+          "in": "path"
+          "required": true
+          "schema":
+            "type": "string"
+            "format": "uuid"
+      "requestBody":
+        "required": true
+        "content":
+          "multipart/form-data":
+            "schema":
+              "type": "object"
+              "properties":
+                "file":
+                  "type": "string"
+                  "format": "binary"
+                "altText":
+                  "type": "string"
+                  "maxLength": 255
+              "required":
+                - "file"
+              "additionalProperties": false
+      "responses":
+        "201":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Image"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/products/{id}/images/{imageId}":
+    "delete":
+      "operationId": "delete_admin_products_id_images_imageId"
+      "tags":
+        - "Admin"
+      "summary": "Remove image metadata and schedule file cleanup"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "id"
+          "in": "path"
+          "required": true
+          "schema":
+            "type": "string"
+            "format": "uuid"
+        -
+          "name": "imageId"
+          "in": "path"
+          "required": true
+          "schema":
+            "type": "string"
+            "format": "uuid"
+      "responses":
+        "204":
+          "description": "Success"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/categories":
+    "get":
+      "operationId": "get_admin_categories"
+      "tags":
+        - "Admin"
+      "summary": "All categories"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "page"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "integer"
+            "minimum": 1
+            "default": 1
+        -
+          "name": "pageSize"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "integer"
+            "minimum": 1
+            "maximum": 100
+            "default": 20
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/CategoryPage"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+    "post":
+      "operationId": "post_admin_categories"
+      "tags":
+        - "Admin"
+      "summary": "Create category"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/CategoryInput"
+      "responses":
+        "201":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Category"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/categories/{id}":
+    "patch":
+      "operationId": "patch_admin_categories_id"
+      "tags":
+        - "Admin"
+      "summary": "Rename or hide category; does not disable products"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "id"
+          "in": "path"
+          "required": true
+          "schema":
+            "type": "string"
+            "format": "uuid"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/CategoryPatch"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Category"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/inventory":
+    "get":
+      "operationId": "get_admin_inventory"
+      "tags":
+        - "Admin"
+      "summary": "Warehouse counters"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "page"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "integer"
+            "minimum": 1
+            "default": 1
+        -
+          "name": "pageSize"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "integer"
+            "minimum": 1
+            "maximum": 100
+            "default": 20
+        -
+          "name": "lowStock"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "boolean"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/StockPage"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/inventory/items":
+    "post":
+      "operationId": "post_admin_inventory_items"
+      "tags":
+        - "Admin"
+      "summary": "Initialize product stock to zero"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "Idempotency-Key"
+          "in": "header"
+          "required": true
+          "schema":
+            "type": "string"
+            "minLength": 1
+            "maxLength": 128
+          "description": "Stable across retries of the same actor/scope/payload. Different payload with same key returns 409."
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/StockCreate"
+      "responses":
+        "201":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Stock"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/inventory/adjustments":
+    "post":
+      "operationId": "post_admin_inventory_adjustments"
+      "tags":
+        - "Admin"
+      "summary": "Adjust onHand, never reserved; validate expectedVersion"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "Idempotency-Key"
+          "in": "header"
+          "required": true
+          "schema":
+            "type": "string"
+            "minLength": 1
+            "maxLength": 128
+          "description": "Stable across retries of the same actor/scope/payload. Different payload with same key returns 409."
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/StockAdjustment"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Stock"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/inventory/{productId}/movements":
+    "get":
+      "operationId": "get_admin_inventory_productId_movements"
+      "tags":
+        - "Admin"
+      "summary": "Stock audit trail"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "page"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "integer"
+            "minimum": 1
+            "default": 1
+        -
+          "name": "pageSize"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "integer"
+            "minimum": 1
+            "maximum": 100
+            "default": 20
+        -
+          "name": "productId"
+          "in": "path"
+          "required": true
+          "schema":
+            "type": "string"
+            "format": "uuid"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/MovementPage"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/orders":
+    "get":
+      "operationId": "get_admin_orders"
+      "tags":
+        - "Admin"
+      "summary": "All store orders"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "page"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "integer"
+            "minimum": 1
+            "default": 1
+        -
+          "name": "pageSize"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "integer"
+            "minimum": 1
+            "maximum": 100
+            "default": 20
+        -
+          "name": "status"
+          "in": "query"
+          "required": false
+          "schema":
+            "$ref": "#/components/schemas/OrderStatus"
+        -
+          "name": "q"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/OrderPage"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/orders/{id}":
+    "get":
+      "operationId": "get_admin_orders_id"
+      "tags":
+        - "Admin"
+      "summary": "Admin order details"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "id"
+          "in": "path"
+          "required": true
+          "schema":
+            "type": "string"
+            "format": "uuid"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Order"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/orders/{id}/confirm":
+    "post":
+      "operationId": "post_admin_orders_id_confirm"
+      "tags":
+        - "Admin"
+      "summary": "Confirm without reserving again"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "id"
+          "in": "path"
+          "required": true
+          "schema":
+            "type": "string"
+            "format": "uuid"
+        -
+          "name": "Idempotency-Key"
+          "in": "header"
+          "required": true
+          "schema":
+            "type": "string"
+            "minLength": 1
+            "maxLength": 128
+          "description": "Stable across retries of the same actor/scope/payload. Different payload with same key returns 409."
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/ActionResult"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/orders/{id}/cancel":
+    "post":
+      "operationId": "post_admin_orders_id_cancel"
+      "tags":
+        - "Admin"
+      "summary": "Cancel before dispatch, compensate stock and payment"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "id"
+          "in": "path"
+          "required": true
+          "schema":
+            "type": "string"
+            "format": "uuid"
+        -
+          "name": "Idempotency-Key"
+          "in": "header"
+          "required": true
+          "schema":
+            "type": "string"
+            "minLength": 1
+            "maxLength": 128
+          "description": "Stable across retries of the same actor/scope/payload. Different payload with same key returns 409."
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/Reason"
+      "responses":
+        "202":
+          "description": "Accepted; poll resource for business result."
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/ActionResult"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/orders/{id}/dispatch":
+    "post":
+      "operationId": "post_admin_orders_id_dispatch"
+      "tags":
+        - "Admin"
+      "summary": "Wait for StockCommitted before SHIPPING"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "id"
+          "in": "path"
+          "required": true
+          "schema":
+            "type": "string"
+            "format": "uuid"
+        -
+          "name": "Idempotency-Key"
+          "in": "header"
+          "required": true
+          "schema":
+            "type": "string"
+            "minLength": 1
+            "maxLength": 128
+          "description": "Stable across retries of the same actor/scope/payload. Different payload with same key returns 409."
+      "responses":
+        "202":
+          "description": "Accepted; poll resource for business result."
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/ActionResult"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/orders/{id}/complete":
+    "post":
+      "operationId": "post_admin_orders_id_complete"
+      "tags":
+        - "Admin"
+      "summary": "Record delivery and collect COD via Payment if needed"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "id"
+          "in": "path"
+          "required": true
+          "schema":
+            "type": "string"
+            "format": "uuid"
+        -
+          "name": "Idempotency-Key"
+          "in": "header"
+          "required": true
+          "schema":
+            "type": "string"
+            "minLength": 1
+            "maxLength": 128
+          "description": "Stable across retries of the same actor/scope/payload. Different payload with same key returns 409."
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/Complete"
+      "responses":
+        "202":
+          "description": "Accepted; poll resource for business result."
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/ActionResult"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/orders/{id}/exceptions":
+    "post":
+      "operationId": "post_admin_orders_id_exceptions"
+      "tags":
+        - "Admin"
+      "summary": "Mark requiresAttention; do not invent delivery/refund"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "parameters":
+        -
+          "name": "id"
+          "in": "path"
+          "required": true
+          "schema":
+            "type": "string"
+            "format": "uuid"
+        -
+          "name": "Idempotency-Key"
+          "in": "header"
+          "required": true
+          "schema":
+            "type": "string"
+            "minLength": 1
+            "maxLength": 128
+          "description": "Stable across retries of the same actor/scope/payload. Different payload with same key returns 409."
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/Reason"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/ActionResult"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/overview":
+    "get":
+      "operationId": "get_admin_overview"
+      "tags":
+        - "Admin"
+      "summary": "Aggregated order counts and low-stock snapshot"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Overview"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/admin/demo/payment-scenario":
+    "get":
+      "operationId": "get_admin_demo_payment_scenario"
+      "tags":
+        - "Admin"
+      "summary": "Only enabled in demo environment; otherwise 404"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Demo"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+    "put":
+      "operationId": "put_admin_demo_payment_scenario"
+      "tags":
+        - "Admin"
+      "summary": "Affects new payment/refund scenarios; audited; never rewrites settled payment"
+      "security":
+        -
+          "bearerAuth": []
+      "x-required-role": "ADMIN"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/Demo"
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Demo"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "409":
+          "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+"components":
+  "securitySchemes":
+    "bearerAuth":
+      "type": "http"
+      "scheme": "bearer"
+      "bearerFormat": "JWT"
+    "refreshCookie":
+      "type": "apiKey"
+      "in": "cookie"
+      "name": "refreshToken"
+      "description": "Requires appropriate Origin/CSRF validation in addition to cookie."
+  "schemas":
+    "Error":
+      "type": "object"
+      "properties":
+        "code":
+          "type": "string"
+        "message":
+          "type": "string"
+        "requestId":
+          "type": "string"
+        "details":
+          "type": "object"
+          "additionalProperties": true
+      "required":
+        - "code"
+        - "message"
+        - "requestId"
+      "additionalProperties": false
+    "User":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "format": "uuid"
+        "email":
+          "type": "string"
+          "format": "email"
+        "fullName":
+          "type": "string"
+        "role":
+          "type": "string"
+          "enum":
+            - "CUSTOMER"
+            - "ADMIN"
+        "status":
+          "type": "string"
+          "enum":
+            - "ACTIVE"
+            - "DISABLED"
+      "required":
+        - "id"
+        - "email"
+        - "fullName"
+        - "role"
+        - "status"
+      "additionalProperties": false
+    "Register":
+      "type": "object"
+      "properties":
+        "email":
+          "type": "string"
+          "format": "email"
+          "maxLength": 254
+        "fullName":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 150
+        "password":
+          "type": "string"
+          "minLength": 10
+          "maxLength": 128
+          "format": "password"
+      "required":
+        - "email"
+        - "fullName"
+        - "password"
+      "additionalProperties": false
+    "Login":
+      "type": "object"
+      "properties":
+        "email":
+          "type": "string"
+          "format": "email"
+        "password":
+          "type": "string"
+          "format": "password"
+      "required":
+        - "email"
+        - "password"
+      "additionalProperties": false
+    "Token":
+      "type": "object"
+      "properties":
+        "accessToken":
+          "type": "string"
+        "expiresIn":
+          "type": "integer"
+          "minimum": 1
+        "user":
+          "$ref": "#/components/schemas/User"
+      "required":
+        - "accessToken"
+        - "expiresIn"
+        - "user"
+      "additionalProperties": false
+    "Category":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "format": "uuid"
+        "name":
+          "type": "string"
+        "slug":
+          "type": "string"
+        "description":
+          "type":
+            - "string"
+            - "null"
+        "isVisible":
+          "type": "boolean"
+      "required":
+        - "id"
+        - "name"
+        - "slug"
+        - "description"
+        - "isVisible"
+      "additionalProperties": false
+    "CategoryInput":
+      "type": "object"
+      "properties":
+        "name":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 100
+        "slug":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 120
+        "description":
+          "type": "string"
+        "isVisible":
+          "type": "boolean"
+      "required":
+        - "name"
+        - "slug"
+      "additionalProperties": false
+    "CategoryPatch":
+      "type": "object"
+      "properties":
+        "name":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 100
+        "slug":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 120
+        "description":
+          "type": "string"
+        "isVisible":
+          "type": "boolean"
+      "required": []
+      "additionalProperties": false
+      "minProperties": 1
+    "Product":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "format": "uuid"
+        "sku":
+          "type": "string"
+        "slug":
+          "type": "string"
+        "name":
+          "type": "string"
+        "categoryId":
+          "type": "string"
+          "format": "uuid"
+        "description":
+          "type": "string"
+        "specifications":
+          "type": "object"
+          "additionalProperties":
+            "type": "string"
+        "priceAmount":
+          "type": "string"
+          "pattern": "^[0-9]+$"
+          "example": "430000"
+        "currency":
+          "type": "string"
+          "enum":
+            - "VND"
+        "status":
+          "type": "string"
+          "enum":
+            - "DRAFT"
+            - "ACTIVE"
+            - "DISCONTINUED"
+        "version":
+          "type": "integer"
+          "minimum": 0
+        "images":
+          "type": "array"
+          "items":
+            "$ref": "#/components/schemas/Image"
+        "availability":
+          "type": "string"
+          "enum":
+            - "IN_STOCK"
+            - "OUT_OF_STOCK"
+            - "UNKNOWN"
+      "required":
+        - "id"
+        - "sku"
+        - "slug"
+        - "name"
+        - "categoryId"
+        - "description"
+        - "specifications"
+        - "priceAmount"
+        - "currency"
+        - "status"
+        - "version"
+        - "images"
+        - "availability"
+      "additionalProperties": false
+    "Image":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "format": "uuid"
+        "url":
+          "type": "string"
+        "altText":
+          "type":
+            - "string"
+            - "null"
+        "sortOrder":
+          "type": "integer"
+          "minimum": 0
+      "required":
+        - "id"
+        - "url"
+        - "altText"
+        - "sortOrder"
+      "additionalProperties": false
+    "ProductInput":
+      "type": "object"
+      "properties":
+        "sku":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 64
+        "slug":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 180
+        "name":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 200
+        "categoryId":
+          "type": "string"
+          "format": "uuid"
+        "description":
+          "type": "string"
+        "specifications":
+          "type": "object"
+          "additionalProperties":
+            "type": "string"
+        "priceAmount":
+          "type": "string"
+          "pattern": "^[0-9]+$"
+          "example": "430000"
+        "currency":
+          "type": "string"
+          "enum":
+            - "VND"
+        "status":
+          "type": "string"
+          "enum":
+            - "DRAFT"
+            - "ACTIVE"
+            - "DISCONTINUED"
+      "required":
+        - "sku"
+        - "slug"
+        - "name"
+        - "categoryId"
+        - "description"
+        - "priceAmount"
+        - "currency"
+        - "status"
+      "additionalProperties": false
+    "ProductPatch":
+      "type": "object"
+      "properties":
+        "slug":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 180
+        "name":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 200
+        "categoryId":
+          "type": "string"
+          "format": "uuid"
+        "description":
+          "type": "string"
+        "specifications":
+          "type": "object"
+          "additionalProperties":
+            "type": "string"
+        "priceAmount":
+          "type": "string"
+          "pattern": "^[0-9]+$"
+          "example": "430000"
+        "currency":
+          "type": "string"
+          "enum":
+            - "VND"
+        "status":
+          "type": "string"
+          "enum":
+            - "DRAFT"
+            - "ACTIVE"
+            - "DISCONTINUED"
+        "expectedVersion":
+          "type": "integer"
+          "minimum": 0
+        "imageIds":
+          "type": "array"
+          "items":
+            "type": "string"
+            "format": "uuid"
+          "maxItems": 5
+      "required":
+        - "expectedVersion"
+      "additionalProperties": false
+      "minProperties": 2
+    "CartItem":
+      "type": "object"
+      "properties":
+        "productId":
+          "type": "string"
+          "format": "uuid"
+        "quantity":
+          "type": "integer"
+          "minimum": 1
+          "maximum": 999
+      "required":
+        - "productId"
+        - "quantity"
+      "additionalProperties": false
+    "QuoteInput":
+      "type": "object"
+      "properties":
+        "items":
+          "type": "array"
+          "items":
+            "$ref": "#/components/schemas/CartItem"
+          "minItems": 1
+          "maxItems": 50
+      "required":
+        - "items"
+      "additionalProperties": false
+    "QuoteItem":
+      "type": "object"
+      "properties":
+        "productId":
+          "type": "string"
+          "format": "uuid"
+        "sku":
+          "type": "string"
+        "name":
+          "type": "string"
+        "quantity":
+          "type": "integer"
+          "minimum": 1
+          "maximum": 999
+        "unitPriceAmount":
+          "type": "string"
+          "pattern": "^[0-9]+$"
+          "example": "430000"
+        "lineTotalAmount":
+          "type": "string"
+          "pattern": "^[0-9]+$"
+          "example": "430000"
+        "catalogVersion":
+          "type": "integer"
+          "minimum": 0
+      "required":
+        - "productId"
+        - "sku"
+        - "name"
+        - "quantity"
+        - "unitPriceAmount"
+        - "lineTotalAmount"
+        - "catalogVersion"
+      "additionalProperties": false
+    "Quote":
+      "type": "object"
+      "properties":
+        "items":
+          "type": "array"
+          "items":
+            "$ref": "#/components/schemas/QuoteItem"
+        "subtotalAmount":
+          "type": "string"
+          "pattern": "^[0-9]+$"
+          "example": "430000"
+        "shippingFeeAmount":
+          "type": "string"
+          "pattern": "^[0-9]+$"
+          "example": "430000"
+        "totalAmount":
+          "type": "string"
+          "pattern": "^[0-9]+$"
+          "example": "430000"
+        "currency":
+          "type": "string"
+          "enum":
+            - "VND"
+        "quotedAt":
+          "type": "string"
+          "format": "date-time"
+      "required":
+        - "items"
+        - "subtotalAmount"
+        - "shippingFeeAmount"
+        - "totalAmount"
+        - "currency"
+        - "quotedAt"
+      "additionalProperties": false
+    "ConfirmedItem":
+      "type": "object"
+      "properties":
+        "productId":
+          "type": "string"
+          "format": "uuid"
+        "quantity":
+          "type": "integer"
+          "minimum": 1
+          "maximum": 999
+        "expectedUnitPriceAmount":
+          "type": "string"
+          "pattern": "^[0-9]+$"
+          "example": "430000"
+        "expectedCatalogVersion":
+          "type": "integer"
+          "minimum": 0
+      "required":
+        - "productId"
+        - "quantity"
+        - "expectedUnitPriceAmount"
+        - "expectedCatalogVersion"
+      "additionalProperties": false
+    "Recipient":
+      "type": "object"
+      "properties":
+        "name":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 150
+        "phone":
+          "type": "string"
+          "pattern": "^\\+?[0-9]{8,15}$"
+        "address":
+          "type": "string"
+          "minLength": 10
+          "maxLength": 1000
+      "required":
+        - "name"
+        - "phone"
+        - "address"
+      "additionalProperties": false
+    "CreateOrder":
+      "type": "object"
+      "properties":
+        "items":
+          "type": "array"
+          "items":
+            "$ref": "#/components/schemas/ConfirmedItem"
+          "minItems": 1
+          "maxItems": 50
+        "expectedShippingFeeAmount":
+          "type": "string"
+          "pattern": "^[0-9]+$"
+          "example": "430000"
+        "recipient":
+          "$ref": "#/components/schemas/Recipient"
+        "paymentMethod":
+          "type": "string"
+          "enum":
+            - "COD"
+            - "SIMULATED"
+        "note":
+          "type": "string"
+          "maxLength": 1000
+      "required":
+        - "items"
+        - "expectedShippingFeeAmount"
+        - "recipient"
+        - "paymentMethod"
+      "additionalProperties": false
+    "OrderStatus":
+      "type": "string"
+      "enum":
+        - "PROCESSING"
+        - "AWAITING_CONFIRMATION"
+        - "PREPARING"
+        - "SHIPPING"
+        - "COMPLETED"
+        - "CANCELLING"
+        - "CANCELLED"
+        - "REJECTED"
+    "PaymentStatus":
+      "type": "string"
+      "enum":
+        - "PENDING"
+        - "AWAITING_COLLECTION"
+        - "SUCCEEDED"
+        - "FAILED"
+        - "REFUND_PENDING"
+        - "REFUNDED"
+        - "CANCELLED"
+    "OrderAccepted":
+      "type": "object"
+      "properties":
+        "orderId":
+          "type": "string"
+          "format": "uuid"
+        "orderNumber":
+          "type": "string"
+        "status":
+          "$ref": "#/components/schemas/OrderStatus"
+      "required":
+        - "orderId"
+        - "orderNumber"
+        - "status"
+      "additionalProperties": false
+    "ActionResult":
+      "type": "object"
+      "properties":
+        "orderId":
+          "type": "string"
+          "format": "uuid"
+        "status":
+          "$ref": "#/components/schemas/OrderStatus"
+        "workflowState":
+          "type": "string"
+      "required":
+        - "orderId"
+        - "status"
+        - "workflowState"
+      "additionalProperties": false
+    "History":
+      "type": "object"
+      "properties":
+        "fromStatus":
+          "type":
+            - "string"
+            - "null"
+        "toStatus":
+          "type": "string"
+        "reason":
+          "type":
+            - "string"
+            - "null"
+        "createdAt":
+          "type": "string"
+          "format": "date-time"
+      "required":
+        - "fromStatus"
+        - "toStatus"
+        - "reason"
+        - "createdAt"
+      "additionalProperties": false
+    "Order":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "format": "uuid"
+        "orderNumber":
+          "type": "string"
+        "customerId":
+          "type": "string"
+          "format": "uuid"
+        "status":
+          "$ref": "#/components/schemas/OrderStatus"
+        "paymentId":
+          "type":
+            - "string"
+            - "null"
+          "format": "uuid"
+        "paymentStatus":
+          "anyOf":
+            -
+              "$ref": "#/components/schemas/PaymentStatus"
+            -
+              "type": "null"
+        "paymentMethod":
+          "type": "string"
+          "enum":
+            - "COD"
+            - "SIMULATED"
+        "items":
+          "type": "array"
+          "items":
+            "$ref": "#/components/schemas/QuoteItem"
+        "recipient":
+          "$ref": "#/components/schemas/Recipient"
+        "note":
+          "type":
+            - "string"
+            - "null"
+        "subtotalAmount":
+          "type": "string"
+          "pattern": "^[0-9]+$"
+          "example": "430000"
+        "shippingFeeAmount":
+          "type": "string"
+          "pattern": "^[0-9]+$"
+          "example": "430000"
+        "totalAmount":
+          "type": "string"
+          "pattern": "^[0-9]+$"
+          "example": "430000"
+        "currency":
+          "type": "string"
+          "enum":
+            - "VND"
+        "createdAt":
+          "type": "string"
+          "format": "date-time"
+        "workflow":
+          "type": "object"
+          "properties":
+            "phase":
+              "type": "string"
+            "state":
+              "type": "string"
+            "requiresAttention":
+              "type": "boolean"
+          "required":
+            - "phase"
+            - "state"
+            - "requiresAttention"
+          "additionalProperties": false
+        "history":
+          "type": "array"
+          "items":
+            "$ref": "#/components/schemas/History"
+        "allowedActions":
+          "type": "array"
+          "items":
+            "type": "string"
+            "enum":
+              - "CANCEL"
+              - "CONFIRM"
+              - "DISPATCH"
+              - "COMPLETE"
+              - "RECORD_EXCEPTION"
+      "required":
+        - "id"
+        - "orderNumber"
+        - "customerId"
+        - "status"
+        - "paymentId"
+        - "paymentStatus"
+        - "paymentMethod"
+        - "items"
+        - "recipient"
+        - "note"
+        - "subtotalAmount"
+        - "shippingFeeAmount"
+        - "totalAmount"
+        - "currency"
+        - "createdAt"
+        - "workflow"
+        - "history"
+        - "allowedActions"
+      "additionalProperties": false
+    "OrderSummary":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "format": "uuid"
+        "orderNumber":
+          "type": "string"
+        "status":
+          "$ref": "#/components/schemas/OrderStatus"
+        "paymentStatus":
+          "anyOf":
+            -
+              "$ref": "#/components/schemas/PaymentStatus"
+            -
+              "type": "null"
+        "totalAmount":
+          "type": "string"
+          "pattern": "^[0-9]+$"
+          "example": "430000"
+        "currency":
+          "type": "string"
+          "enum":
+            - "VND"
+        "createdAt":
+          "type": "string"
+          "format": "date-time"
+      "required":
+        - "id"
+        - "orderNumber"
+        - "status"
+        - "paymentStatus"
+        - "totalAmount"
+        - "currency"
+        - "createdAt"
+      "additionalProperties": false
+    "Reason":
+      "type": "object"
+      "properties":
+        "reason":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 1000
+      "required":
+        - "reason"
+      "additionalProperties": false
+    "Complete":
+      "type": "object"
+      "properties":
+        "delivered":
+          "type": "boolean"
+          "const": true
+        "codCollected":
+          "type": "boolean"
+          "description": "Must be true for COD; not used to charge SIMULATED."
+      "required":
+        - "delivered"
+      "additionalProperties": false
+    "Payment":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "format": "uuid"
+        "orderId":
+          "type": "string"
+          "format": "uuid"
+        "method":
+          "type": "string"
+          "enum":
+            - "COD"
+            - "SIMULATED"
+        "amount":
+          "type": "string"
+          "pattern": "^[0-9]+$"
+          "example": "430000"
+        "currency":
+          "type": "string"
+          "enum":
+            - "VND"
+        "status":
+          "$ref": "#/components/schemas/PaymentStatus"
+        "version":
+          "type": "integer"
+          "minimum": 0
+        "refund":
+          "anyOf":
+            -
+              "type": "object"
+              "properties":
+                "id":
+                  "type": "string"
+                  "format": "uuid"
+                "status":
+                  "type": "string"
+                  "enum":
+                    - "PENDING"
+                    - "SUCCEEDED"
+                    - "NEEDS_ATTENTION"
+                "amount":
+                  "type": "string"
+                  "pattern": "^[0-9]+$"
+                  "example": "430000"
+              "required":
+                - "id"
+                - "status"
+                - "amount"
+              "additionalProperties": false
+            -
+              "type": "null"
+      "required":
+        - "id"
+        - "orderId"
+        - "method"
+        - "amount"
+        - "currency"
+        - "status"
+        - "version"
+        - "refund"
+      "additionalProperties": false
+    "Stock":
+      "type": "object"
+      "properties":
+        "productId":
+          "type": "string"
+          "format": "uuid"
+        "onHandQuantity":
+          "type": "integer"
+          "minimum": 0
+        "reservedQuantity":
+          "type": "integer"
+          "minimum": 0
+        "availableQuantity":
+          "type": "integer"
+          "minimum": 0
+        "lowStockThreshold":
+          "type": "integer"
+          "minimum": 0
+        "version":
+          "type": "integer"
+          "minimum": 0
+      "required":
+        - "productId"
+        - "onHandQuantity"
+        - "reservedQuantity"
+        - "availableQuantity"
+        - "lowStockThreshold"
+        - "version"
+      "additionalProperties": false
+    "StockCreate":
+      "type": "object"
+      "properties":
+        "productId":
+          "type": "string"
+          "format": "uuid"
+        "lowStockThreshold":
+          "type": "integer"
+          "minimum": 0
+      "required":
+        - "productId"
+      "additionalProperties": false
+    "StockAdjustment":
+      "type": "object"
+      "properties":
+        "productId":
+          "type": "string"
+          "format": "uuid"
+        "delta":
+          "type": "integer"
+          "not":
+            "const": 0
+        "reason":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 1000
+        "expectedVersion":
+          "type": "integer"
+          "minimum": 0
+      "required":
+        - "productId"
+        - "delta"
+        - "reason"
+        - "expectedVersion"
+      "additionalProperties": false
+    "Movement":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "format": "uuid"
+        "operationId":
+          "type": "string"
+          "format": "uuid"
+        "productId":
+          "type": "string"
+          "format": "uuid"
+        "movementType":
+          "type": "string"
+        "onHandDelta":
+          "type": "integer"
+        "reservedDelta":
+          "type": "integer"
+        "onHandAfter":
+          "type": "integer"
+          "minimum": 0
+        "reservedAfter":
+          "type": "integer"
+          "minimum": 0
+        "reason":
+          "type": "string"
+        "createdAt":
+          "type": "string"
+          "format": "date-time"
+      "required":
+        - "id"
+        - "operationId"
+        - "productId"
+        - "movementType"
+        - "onHandDelta"
+        - "reservedDelta"
+        - "onHandAfter"
+        - "reservedAfter"
+        - "reason"
+        - "createdAt"
+      "additionalProperties": false
+    "Overview":
+      "type": "object"
+      "properties":
+        "orderCounts":
+          "type": "object"
+          "additionalProperties":
+            "type": "integer"
+            "minimum": 0
+        "lowStockItems":
+          "type": "array"
+          "items":
+            "$ref": "#/components/schemas/Stock"
+        "generatedAt":
+          "type": "string"
+          "format": "date-time"
+      "required":
+        - "orderCounts"
+        - "lowStockItems"
+        - "generatedAt"
+      "additionalProperties": false
+    "Demo":
+      "type": "object"
+      "properties":
+        "paymentScenario":
+          "type": "string"
+          "enum":
+            - "SUCCESS"
+            - "FAILURE"
+            - "DELAYED_SUCCESS"
+            - "DELAYED_FAILURE"
+        "refundScenario":
+          "type": "string"
+          "enum":
+            - "SUCCESS"
+            - "DELAYED_SUCCESS"
+            - "FAIL_UNTIL_RETRY"
+        "delaySeconds":
+          "type": "integer"
+          "minimum": 0
+          "maximum": 300
+      "required":
+        - "paymentScenario"
+        - "refundScenario"
+        - "delaySeconds"
+      "additionalProperties": false
+    "ProductPage":
+      "type": "object"
+      "properties":
+        "items":
+          "type": "array"
+          "items":
+            "$ref": "#/components/schemas/Product"
+        "page":
+          "type": "integer"
+          "minimum": 1
+        "pageSize":
+          "type": "integer"
+          "minimum": 1
+          "maximum": 100
+        "total":
+          "type": "integer"
+          "minimum": 0
+      "required":
+        - "items"
+        - "page"
+        - "pageSize"
+        - "total"
+      "additionalProperties": false
+    "CategoryPage":
+      "type": "object"
+      "properties":
+        "items":
+          "type": "array"
+          "items":
+            "$ref": "#/components/schemas/Category"
+        "page":
+          "type": "integer"
+          "minimum": 1
+        "pageSize":
+          "type": "integer"
+          "minimum": 1
+          "maximum": 100
+        "total":
+          "type": "integer"
+          "minimum": 0
+      "required":
+        - "items"
+        - "page"
+        - "pageSize"
+        - "total"
+      "additionalProperties": false
+    "OrderPage":
+      "type": "object"
+      "properties":
+        "items":
+          "type": "array"
+          "items":
+            "$ref": "#/components/schemas/OrderSummary"
+        "page":
+          "type": "integer"
+          "minimum": 1
+        "pageSize":
+          "type": "integer"
+          "minimum": 1
+          "maximum": 100
+        "total":
+          "type": "integer"
+          "minimum": 0
+      "required":
+        - "items"
+        - "page"
+        - "pageSize"
+        - "total"
+      "additionalProperties": false
+    "StockPage":
+      "type": "object"
+      "properties":
+        "items":
+          "type": "array"
+          "items":
+            "$ref": "#/components/schemas/Stock"
+        "page":
+          "type": "integer"
+          "minimum": 1
+        "pageSize":
+          "type": "integer"
+          "minimum": 1
+          "maximum": 100
+        "total":
+          "type": "integer"
+          "minimum": 0
+      "required":
+        - "items"
+        - "page"
+        - "pageSize"
+        - "total"
+      "additionalProperties": false
+    "MovementPage":
+      "type": "object"
+      "properties":
+        "items":
+          "type": "array"
+          "items":
+            "$ref": "#/components/schemas/Movement"
+        "page":
+          "type": "integer"
+          "minimum": 1
+        "pageSize":
+          "type": "integer"
+          "minimum": 1
+          "maximum": 100
+        "total":
+          "type": "integer"
+          "minimum": 0
+      "required":
+        - "items"
+        - "page"
+        - "pageSize"
+        - "total"
+      "additionalProperties": false
+  "responses":
+    "BadRequest":
+      "description": "Invalid input"
+      "content":
+        "application/json":
+          "schema":
+            "$ref": "#/components/schemas/Error"
+    "Unauthorized":
+      "description": "Missing or expired authentication"
+      "content":
+        "application/json":
+          "schema":
+            "$ref": "#/components/schemas/Error"
+    "Forbidden":
+      "description": "Insufficient permission"
+      "content":
+        "application/json":
+          "schema":
+            "$ref": "#/components/schemas/Error"
+    "NotFound":
+      "description": "Resource absent or not visible to caller"
+      "content":
+        "application/json":
+          "schema":
+            "$ref": "#/components/schemas/Error"
+    "Conflict":
+      "description": "Price, state, version or idempotency conflict"
+      "content":
+        "application/json":
+          "schema":
+            "$ref": "#/components/schemas/Error"
+    "Unavailable":
+      "description": "Dependency unavailable"
+      "content":
+        "application/json":
+          "schema":
+            "$ref": "#/components/schemas/Error"
