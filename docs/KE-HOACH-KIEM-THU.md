@@ -4,6 +4,8 @@
 
 ## 1. Tầng kiểm thử
 
+Backend FastAPI: pytest + HTTPX; test async dùng AnyIO và quản lý lifespan tài nguyên. Kiểm tra thêm response validation được chuẩn hóa 400, tiền bigint serialize thành chuỗi, JSON camelCase, cookie/CSRF và OpenAPI tương thích contract. Frontend E2E giữ Playwright.
+
 - Unit: tính tiền, transition, điều kiện hủy/thu/hoàn, validation; không mock toàn bộ rồi coi như integration.
 - Integration: PostgreSQL thật cho transaction/cạnh tranh; RabbitMQ thật cho outbox/inbox/ack và recovery, môi trường test riêng.
 - Contract: payload producer tương thích consumer, OpenAPI request/response và schema message.
@@ -11,6 +13,8 @@
 - Fault/concurrency: dừng đúng điểm, gửi message trùng/cũ và tranh tồn; kiểm tra cả trạng thái DB cuối, không chỉ mã HTTP.
 
 ## 2. Dữ liệu mẫu đề xuất
+
+**Môi trường đã chốt:** dev hằng ngày dùng Supabase chung một database/5 schema; FastAPI có thể chạy trên laptop của thành viên. Kiểm chứng dữ liệu tạo từ một máy được máy khác đọc với đúng quyền. Test tự động/reset/fault dùng DB/broker riêng cùng tên schema, không dùng URL dev. Kiểm tra role không truy cập chéo, migration chỉ thay schema mình, pool giới hạn và worker gửi đúng broker dev. Production chưa quyết định; chưa có kết quả kiểm thử Supabase thực tế.
 
 | Fixture | Thiết lập |
 | --- | --- |

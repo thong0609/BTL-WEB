@@ -4,6 +4,8 @@ Phiên bản thiết kế 0.1. [openapi.yaml](openapi.yaml) là cấu trúc máy
 
 ## 1. Quy ước chung
 
+Triển khai backend bằng FastAPI/Python theo quyết định 28/10/2026. Pydantic alias/serializer phải giữ đúng contract camelCase, tiền dạng chuỗi và Error envelope bên dưới. Validation mặc định 422 của FastAPI cần handler chuẩn hóa sang 400 theo hợp đồng; schema tự sinh của service không tự động thay thế OpenAPI public đã thống nhất.
+
 - Public base path: `/api/v1`. Frontend không gọi thẳng database, broker hoặc endpoint internal.
 - JSON camelCase, ID UUID, timestamp ISO 8601 UTC, tiền VND là **chuỗi số nguyên** như `"430000"`; số lượng là integer.
 - Bearer access token; refresh token trong cookie HttpOnly. ADMIN được kiểm tra tại service, không chỉ ẩn menu.

@@ -19,7 +19,7 @@ Mỗi chủ service phụ trách schema/migration, Dockerfile, validation, test 
 | Task | Nội dung | Chủ trì | Phụ thuộc | Bằng chứng hoàn thành |
 | --- | --- | --- | --- | --- |
 | PL-01 | Review phạm vi, thuật ngữ, state và contract v0.1 | 1 + cả nhóm | Không | Quyết định ghi trong decisions |
-| INF-01 | Khung monorepo, Compose, DB accounts, broker | 1 | PL-01 | Healthcheck và chạy môi trường có hướng dẫn |
+| INF-01 | Khung monorepo; backend trên máy thành viên kết nối Supabase dev chung 1 project/5 schema; broker dev, role và phân công worker | 1 | PL-01 | Một thành viên tạo dữ liệu, thành viên khác đọc được đúng quyền; HTTP/broker dev liên thông; migration đúng schema; test DB riêng |
 | INF-02 | CI typecheck/lint/test/build | 1 + chủ service | INF-01 | PR mẫu pass |
 | ID-01 | Register/login/refresh/logout, seed ADMIN | 1 | INF-01 | AT-01/02, không lộ secret |
 | CAT-01 | Danh mục/sản phẩm/ảnh, query công khai | 2 | INF-01 | AT-03/11, seed hàng |

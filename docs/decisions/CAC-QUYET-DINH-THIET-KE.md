@@ -7,7 +7,7 @@ Ngày lập 24/10/2026. Phân biệt **đã xác nhận bởi người dùng** v
 | DEC-01 | Một cửa hàng, không sàn nhiều người bán | Người dùng xác nhận | Không có shop, hoa hồng hoặc chia đơn theo người bán |
 | DEC-02 | Nhóm 5 người, định hướng microservices | Người dùng xác nhận | Cần contract và tích hợp sớm |
 | DEC-03 | Payment riêng, mô phỏng thuộc MVP | Người dùng xác nhận | 5 service nghiệp vụ; test thành công/thất bại/chậm và hoàn mô phỏng |
-| DEC-04 | React/NestJS/PostgreSQL/Prisma/RabbitMQ/Compose | Đề xuất | Thống nhất stack; nhóm cần kiểm tra năng lực và khóa phiên bản |
+| DEC-04 | React/TypeScript + FastAPI/Python; PostgreSQL/SQLAlchemy/Alembic/RabbitMQ/Compose | Backend FastAPI được người dùng xác nhận ngày 28/10/2026; các thư viện phụ trợ là đề xuất | Thay phương án NestJS trước đây; khóa phiên bản và kiểm tra tích hợp |
 | DEC-05 | Một kho, VND, COD và phí ship cố định | Đề xuất kế thừa | Giảm biến thể quy trình; giá trị phí chưa chốt |
 | DEC-06 | Một payment/order, một refund toàn phần/payment | Đề xuất | Retry cùng ID; thất bại đặt đơn mới sau hủy xong; không trả một phần |
 | DEC-07 | Order điều phối, không có Saga service riêng | Đề xuất | Workflow lưu DB và outbox, không chỉ giữ RAM |
@@ -18,6 +18,8 @@ Ngày lập 24/10/2026. Phân biệt **đã xác nhận bởi người dùng** v
 | DEC-12 | Kubernetes/tracing nâng cao sau MVP | Đề xuất | Chỉ đổi nếu môn học bắt buộc, phải điều chỉnh thời gian |
 
 ## Các mục cần chốt trong buổi khởi động
+
+**DEC-13 — Supabase PostgreSQL cho dev chung (28/10/2026, ACCEPTED, đã làm rõ):** dev hằng ngày của nhóm dùng một project, database `postgres`, 5 schema và role runtime/migration riêng. Thành viên chạy backend trên laptop kết nối DB dev này, không bắt buộc DB local cá nhân. Test reset dùng DB riêng cùng schema; local độc lập là tùy chọn. Broker dev chung, worker/service chạy theo phân công trên máy thành viên hoặc host dev. Production chưa quyết định. Tên *_db là miền dữ liệu logic; cấm truy cập chéo/FK xuyên service. Chưa tạo tài nguyên thực tế. Xem [chi tiết](../PHUONG-AN-SUPABASE.md).
 
 Tên/ngành hàng; thời hạn và giờ mỗi người; phí ship; quyền ADMIN có cần tách không; giới hạn ảnh/số dòng; khoảng polling/retry/cảnh báo; cách triển khai HTTPS/service credential; tiêu chí môi trường demo. Kiểm tra yêu cầu giảng viên trước khi biến Kubernetes hoặc thanh toán thật thành đầu việc.
 

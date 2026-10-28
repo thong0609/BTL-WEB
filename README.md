@@ -19,7 +19,7 @@ Tất cả bản chính thức nằm trong `docs/`. Không tạo thêm bản sao
 
 - Một cửa hàng; 5 service nghiệp vụ: Identity, Catalog, Inventory, Order, Payment.
 - Payment mô phỏng nằm trong MVP. Thanh toán thật, vận chuyển tích hợp, nhiều người bán và đổi trả sau nhận nằm ngoài MVP.
-- Stack đề xuất: React/TypeScript, NestJS, PostgreSQL/Prisma, RabbitMQ, Docker Compose.
+- Backend **FastAPI/Python đã được nhóm chọn ngày 28/10/2026**. Frontend React/TypeScript; thư viện phụ trợ đề xuất: PostgreSQL, SQLAlchemy/asyncpg, Alembic, Pydantic, aio-pika, pytest/HTTPX; triển khai Docker Compose.
 - Một kho, VND, COD, một cấu hình trên mỗi SKU và khung 8 tuần là giả định thiết kế hiện tại. Tên cửa hàng, ngành hàng, phí ship và nhân sự cụ thể còn cần nhóm chốt.
 
 ## Cách tra cứu một chức năng
@@ -49,5 +49,7 @@ Ví dụ hủy đơn: **UC-ORD-03 → UI-08 → POST /orders/{id}/cancel → Rel
 | Bù trừ | Ví dụ giải phóng hàng hoặc hoàn tiền; không phải rollback chung 5 DB |
 
 ## Quản lý thay đổi
+
+**Đã chốt và làm rõ 28/10/2026:** dev hằng ngày của nhóm dùng chung Supabase, database `postgres`, 5 schema/role riêng theo service. Backend có thể chạy trên laptop mỗi người và kết nối DB dev này để cùng thấy dữ liệu. Test cần reset dùng DB riêng; PostgreSQL local độc lập chỉ là tùy chọn. **Production chưa quyết định.** Xem [thiết kế Supabase](docs/PHUONG-AN-SUPABASE.md) về kết nối và phối hợp worker/broker. Chưa tạo/kiểm chứng tài nguyên thực tế.
 
 Quy tắc nghiệp vụ nằm ở đặc tả; trạng thái/quy trình nằm ở thiết kế luồng; cấu trúc HTTP nằm ở OpenAPI; cấu trúc message nằm ở MESSAGES; cấu trúc DB nằm ở mô tả hệ thống. Nếu phát hiện xung đột, tạo ghi chú và sửa các tài liệu liên quan trong cùng PR trước khi triển khai. Không tự chọn cách hiểu riêng ở từng service.

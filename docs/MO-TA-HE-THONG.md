@@ -11,7 +11,9 @@ Bộ tài liệu đi kèm: [hướng dẫn đọc](../README.md), [đặc tả n
 
 Tài liệu này chuyển mô tả website thành một thiết kế hệ thống ở mức khái niệm: hệ thống gồm những phần nào, ai chịu trách nhiệm cho dữ liệu nào, các phần phối hợp thế nào và MVP dừng ở đâu.
 
-Bản cập nhật này bổ sung kiến trúc kỹ thuật cụ thể tại mục 1A: React + TypeScript, NestJS, PostgreSQL + Prisma, RabbitMQ và Docker Compose. Đây là bộ công nghệ đề xuất để nhóm triển khai, chưa phải xác nhận mọi thành viên đã quen stack này. Khi bắt đầu code, khóa phiên bản tương thích bằng lockfile và image tag cụ thể.
+Bản cập nhật này bổ sung kiến trúc kỹ thuật cụ thể tại mục 1A: React + TypeScript, FastAPI, PostgreSQL + SQLAlchemy/Alembic, RabbitMQ và Docker Compose. Đây là bộ công nghệ đề xuất để nhóm triển khai, chưa phải xác nhận mọi thành viên đã quen stack này. Khi bắt đầu code, khóa phiên bản tương thích bằng lockfile và image tag cụ thể.
+
+**Cập nhật 28/10/2026:** nhóm đã chọn FastAPI/Python cho backend, bao gồm gateway và năm service. SQLAlchemy, Alembic, aio-pika và thư viện phụ trợ dưới đây là đề xuất đi kèm để triển khai stack Python thống nhất.
 
 **Đã chốt:** một cửa hàng duy nhất, nhóm 5 người, định hướng microservices. Không phải sàn cho nhiều người bán.
 
@@ -25,24 +27,24 @@ Bản cập nhật này bổ sung kiến trúc kỹ thuật cụ thể tại m�
 
 | Lớp | Công nghệ | Vai trò | Ưu tiên |
 | --- | --- | --- | --- |
-| Ngôn ngữ | TypeScript | Thống nhất frontend/backend | MVP |
+| Ngôn ngữ | TypeScript (frontend), Python (backend) | React và các service FastAPI | MVP |
 | Frontend | React + Vite | Website khách hàng và khu quản trị | MVP |
 | Điều hướng | React Router | Trang sản phẩm, giỏ, đơn, quản trị | MVP |
 | Dữ liệu frontend | TanStack Query | Gọi API, loading/error, polling trạng thái đơn | MVP |
 | Giao diện | Tailwind CSS | Responsive và trình bày thống nhất | MVP |
-| Runtime backend | Node.js LTS tương thích | Chạy gateway và service | MVP |
-| Backend | NestJS | API, validation, phân quyền, message consumer | MVP |
+| Runtime backend | Python + Uvicorn | Chạy ứng dụng ASGI của gateway và service | MVP |
+| Backend | FastAPI + Pydantic | API, validation và phân quyền; consumer riêng dùng aio-pika | MVP |
 | Database | PostgreSQL | Lưu dữ liệu và transaction cục bộ | MVP |
-| ORM/migration | Prisma | Schema, migration, truy cập dữ liệu từng service | MVP |
+| ORM/migration | SQLAlchemy async + asyncpg / Alembic | Model, transaction và migration riêng từng service | MVP |
 | HTTP | REST/JSON | Giao tiếp frontend và truy vấn nội bộ | MVP |
-| Message broker | RabbitMQ | Điều phối giữ, giải phóng và xuất hàng | MVP |
+| Message broker/client | RabbitMQ + aio-pika | Commands/events, ACK sau commit, publisher confirms | MVP |
 | Xác thực | JWT + refresh token có quản lý phiên | Đăng nhập, danh tính, vai trò | MVP |
 | Tài liệu API | OpenAPI/Swagger | Endpoint, request, response, lỗi | MVP |
 | Đóng gói | Docker | Image riêng từng ứng dụng | MVP |
 | Chạy hệ thống | Docker Compose | Container, network, volume và cấu hình | MVP |
 | Public HTTP | Nginx | Phục vụ frontend, chuyển `/api` đến gateway | MVP |
-| Log | Pino, structured JSON | Tra cứu theo service, requestId, orderId | MVP |
-| Backend test | Jest + Supertest | Test nghiệp vụ và HTTP integration | MVP |
+| Log | Python logging + structlog, JSON | Tra cứu theo service, requestId, orderId | MVP |
+| Backend test | pytest + HTTPX + AnyIO | Test nghiệp vụ và HTTP integration | MVP |
 | E2E | Playwright | Kiểm thử luồng khách và quản trị | MVP |
 | CI | GitHub Actions | Typecheck, lint, test, build khi mở PR | MVP |
 | Điều phối nâng cao | Kubernetes qua kind hoặc minikube | Replica, rolling update | Sau MVP, trừ yêu cầu môn học |
@@ -55,12 +57,12 @@ Chưa cần Redis, Elasticsearch, Kafka, gRPC, service mesh hoặc Knative trong
 | Ứng dụng | Công nghệ | Database | HTTP port nội bộ đề xuất | Trách nhiệm |
 | --- | --- | --- | --- | --- |
 | `web` | React; build phục vụ qua Nginx | Không | 80 khi đóng gói | Mua sắm, quản trị |
-| `api-gateway` | NestJS | Không | 3000 | Routing, xác thực yêu cầu ngoài, tổng hợp dữ liệu đọc |
-| `identity-service` | NestJS + Prisma | `identity_db` | 3001 | Tài khoản, vai trò, phiên đăng nhập |
-| `catalog-service` | NestJS + Prisma | `catalog_db` | 3002 | Sản phẩm, danh mục, giá, ảnh |
-| `inventory-service` | NestJS + Prisma | `inventory_db` | 3003 | Tồn, giữ, giải phóng, xuất hàng |
-| `order-service` | NestJS + Prisma | `orders_db` | 3004 | Đơn, snapshot, điều phối quy trình; bản sao trạng thái thanh toán |
-| `payment-service` | NestJS + Prisma | `payments_db` | 3005 | COD, thanh toán và hoàn tiền mô phỏng trong MVP |
+| `api-gateway` | FastAPI | Không | 3000 | Routing, xác thực yêu cầu ngoài, tổng hợp dữ liệu đọc |
+| `identity-service` | FastAPI + SQLAlchemy | `identity_db` | 3001 | Tài khoản, vai trò, phiên đăng nhập |
+| `catalog-service` | FastAPI + SQLAlchemy | `catalog_db` | 3002 | Sản phẩm, danh mục, giá, ảnh |
+| `inventory-service` | FastAPI + SQLAlchemy | `inventory_db` | 3003 | Tồn, giữ, giải phóng, xuất hàng |
+| `order-service` | FastAPI + SQLAlchemy | `orders_db` | 3004 | Đơn, snapshot, điều phối quy trình; bản sao trạng thái thanh toán |
+| `payment-service` | FastAPI + SQLAlchemy | `payments_db` | 3005 | COD, thanh toán và hoàn tiền mô phỏng trong MVP |
 
 **MVP: 5 service nghiệp vụ + 1 gateway + 1 frontend.** Payment sở hữu giao dịch và trạng thái thanh toán cho cả COD và phương thức mô phỏng. Không cần mỗi thành viên tương ứng đúng một service. PostgreSQL, RabbitMQ và Nginx là hạ tầng, không tính là service nghiệp vụ.
 
@@ -71,11 +73,11 @@ Các port trên là quy ước nội bộ. Triển khai chỉ public web qua HTT
 ```mermaid
 flowchart TD
     Browser[Trình duyệt] --> Web[Nginx: React build và /api]
-    Web --> GW[NestJS API Gateway]
-    GW --> Auth[NestJS Identity]
-    GW --> Cat[NestJS Catalog]
-    GW --> Inv[NestJS Inventory]
-    GW --> Ord[NestJS Order]
+    Web --> GW[FastAPI API Gateway]
+    GW --> Auth[FastAPI Identity]
+    GW --> Cat[FastAPI Catalog]
+    GW --> Inv[FastAPI Inventory]
+    GW --> Ord[FastAPI Order]
     Ord -->|REST kiểm tra giá| Cat
     Ord <-->|Commands / Events| MQ[RabbitMQ]
     Inv <-->|Commands / Events| MQ
@@ -83,13 +85,13 @@ flowchart TD
     Cat --> CDB[(catalog_db)]
     Inv --> IDB[(inventory_db)]
     Ord --> ODB[(orders_db)]
-    MQ --> Pay[NestJS Payment]
+    MQ --> Pay[FastAPI Payment]
     GW -->|REST tra cứu có phân quyền| Pay
     Pay --> MQ
     Pay --> PDB[(payments_db)]
 ```
 
-MVP có thể chạy chung một PostgreSQL instance, nhưng mỗi database có tài khoản riêng. Instance này vẫn là điểm lỗi chung; thiết kế demo chưa phải high availability.
+**Đã chốt Supabase cho dev 28/10/2026:** nhóm phát triển hằng ngày trên cùng database Supabase `postgres`, với 5 schema: `commerce_identity`, `commerce_catalog`, `commerce_inventory`, `commerce_orders`, `commerce_payments`. Backend có thể chạy trên laptop mỗi thành viên, kết nối DB dev chung bằng role service riêng để đọc cùng dữ liệu. Mỗi service có runtime/migration role giới hạn schema mình. Test cần reset dùng PostgreSQL riêng cùng tên schema; DB local độc lập là tùy chọn, không bắt buộc cho dev. **Production chưa quyết định.** Tên *_db trong sơ đồ/bảng là miền dữ liệu logic, không phải 5 database vật lý. Xem [PHUONG-AN-SUPABASE.md](PHUONG-AN-SUPABASE.md). Cấm FK/join/truy cập chéo service; tài nguyên thực tế chưa tạo/kiểm chứng.
 
 ### D. API HTTP dự kiến
 
@@ -147,7 +149,7 @@ Cơ chế bắt buộc:
 | `orders_db` | `orders`, `order_items`, `order_status_history`, `order_workflows`, `idempotency_requests`, `order_action_requests`, `processed_messages`, `outbox_messages` |
 | `payments_db` | `payment_attempts`, `refund_attempts`, `payment_status_history`, `demo_configuration`, `demo_configuration_history`, `processed_messages`, `outbox_messages` |
 
-Mỗi service có Prisma schema, migration và credentials riêng; không chia sẻ ORM model hoặc Prisma client giữa các service. Không foreign key xuyên database.
+Mỗi service có SQLAlchemy models, Alembic migrations và credentials riêng; không chia sẻ ORM model hoặc SQLAlchemy session giữa các service. Không foreign key xuyên database.
 
 Tiền VND lưu số nguyên đơn vị đồng với miền giá trị phù hợp; Order tính từ giá Catalog. Thời gian lưu UTC, giao diện hiển thị múi giờ Việt Nam. Đơn lưu snapshot tên, giá, địa chỉ và phí.
 
@@ -598,7 +600,7 @@ Index (status, next_attempt_at), locked_until và (aggregate_type, aggregate_id)
 | Ghi nhận thanh toán | payment_attempts + history + inbox nếu từ message + outbox |
 | Hoàn tiền thành công | refund_attempts + payment_attempts + history + outbox, thêm inbox nếu xử lý trực tiếp message |
 
-Không có một transaction chung bao trùm 5 database. Workflow lưu tiến độ và thực hiện bù trừ/đối chiếu khi một bước chưa rõ kết quả.
+Không dùng transaction chung bao trùm 5 miền dữ liệu/service, dù cùng một database vật lý. Mỗi service chỉ ghi schema của mình; workflow lưu tiến độ và thực hiện bù trừ/đối chiếu khi một bước chưa rõ kết quả.
 
 **Ví dụ:** một đơn mua 2 chuột giá 200.000 đồng và phí ship 30.000 đồng có subtotal 400.000, total 430.000. Order lưu giá snapshot; Inventory giữ 2 đơn vị; Payment ghi amount 430.000. Nếu thanh toán mô phỏng thất bại, giữ lịch sử FAILED, giải phóng 2 đơn vị và kết thúc hủy; không xóa dấu vết payment. Nếu thanh toán thành công rồi hủy trước giao, refund là 430.000 đồng, bao gồm phí ship chưa thực hiện.
 
@@ -686,11 +688,42 @@ single-store-ecommerce/
 
 Mỗi service có Dockerfile, migration và test riêng. Worker outbox có thể chạy trong service ở MVP; khi tăng replica cần cơ chế claim công việc an toàn.
 
-Compose chạy web/Nginx, gateway, năm service, PostgreSQL và RabbitMQ. Volume lưu DB, broker và ảnh. Có healthcheck và logic tự kết nối lại dependency; không chỉ dựa vào thứ tự startup.
+Dev hằng ngày: thành viên chạy frontend/backend của mình trực tiếp hoặc bằng Docker, dùng Supabase dev chung; không cần PostgreSQL local cho luồng này. Luồng checkout đầy đủ dùng broker dev chung và địa chỉ HTTP của các service có thể truy cập từ các máy/host dev. Thống nhất ai chạy worker từng service để không có nhiều phiên bản code tranh cùng việc. DB test và broker test tách riêng khi reset/fault test. Có healthcheck và kết nối lại dependency. PostgreSQL/broker local độc lập chỉ là cấu hình tùy chọn cho test/offline. File ảnh dùng Catalog dev chung, không tự đồng bộ qua DB Supabase.
 
-Demo triển khai trên một máy/VM bằng Compose và HTTPS, chưa chịu được lỗi cả máy. Có backup và thử khôi phục. CI chạy typecheck, lint, test, build; integration test dùng DB/broker dành riêng cho test. CD tự động và Kubernetes làm sau MVP.
+Production chưa được bàn hoặc chốt môi trường triển khai. Khi cần demo, nhóm sẽ quyết định cách chạy bộ ứng dụng; host dev chung là lựa chọn bổ sung, không điều kiện để dùng Supabase dev. CI chạy typecheck, lint, test, build; integration test dùng DB/broker test riêng. Cấu hình dev không được coi là thiết kế production.
 
 ### I. Payment Service trong MVP
+
+#### Quy ước triển khai FastAPI/Python
+
+- Mỗi backend có `pyproject.toml`, dependency lock, package Python, Pydantic schemas, SQLAlchemy models, Alembic migrations và test riêng. Node.js dùng cho công cụ frontend React/Vite, không dùng chạy backend.
+- HTTP server dùng Uvicorn; FastAPI router/dependency kiểm tra đầu vào và quyền. Gateway dùng HTTPX AsyncClient để chuyển tiếp/tổng hợp, có timeout/pool giới hạn, chỉ cho route upstream khai báo sẵn; không nhận URL tùy ý từ client và không tự viết lại quy tắc nghiệp vụ.
+- SQLAlchemy async với asyncpg; một AsyncSession cho mỗi request hoặc lần xử lý message/job. Không chia sẻ session giữa các coroutine, không giữ transaction DB mở trong lúc chờ HTTP/broker. Dữ liệu nghiệp vụ và inbox/outbox vẫn commit cùng transaction cục bộ.
+- RabbitMQ dùng aio-pika cho consumer/publisher. Worker outbox, consumer và job đối chiếu là công việc bền vững dựa trên DB/broker; không dùng FastAPI BackgroundTasks làm hàng đợi cho thao tác tiền/tồn. Nếu chạy cùng tiến trình MVP, quản lý khởi động/tắt qua lifespan và phục hồi; nhiều process/replica vẫn cần claim/lease và idempotency.
+- Pydantic schemas tách khỏi ORM models; dùng validation ràng buộc và serializer rõ ràng. Python int giữ được bigint nhưng response tiền vẫn phải là chuỗi VND theo hợp đồng, timestamp UTC. Field Python có thể snake_case, JSON public giữ camelCase bằng alias, không đổi contract chỉ vì đổi framework.
+- FastAPI mặc định có thể trả 422 cho validation; hợp đồng dự án dùng 400 với Error envelope. Cần exception handler chuyển RequestValidationError và chuẩn hóa lỗi HTTP/domain, giữ header xác thực cần thiết. Schema OpenAPI sinh từ từng service phải được so sánh với hợp đồng public, không tự thay file đã thống nhất bằng schema mặc định.
+- Không chạy Alembic đồng thời ở mọi worker khi startup. Có bước migration riêng trước khi nhận traffic; review autogenerate, bổ sung CHECK/index/constraint cần thiết bằng migration. Không dùng create_all thay migration môi trường chung.
+- Backend test dùng pytest + HTTPX, AnyIO cho async; chủ động quản lý lifespan khi test cần startup resources. Integration kho/tiền dùng PostgreSQL và RabbitMQ thật, không thay SQLite để kết luận về transaction/cạnh tranh.
+- CI backend đề xuất Ruff (lint/format), mypy (typecheck), pytest và build image; frontend giữ TypeScript toolchain và Playwright E2E. Khóa phiên bản khi tạo skeleton, chưa ghi lệnh cài/chạy chưa kiểm chứng.
+
+```text
+apps/order-service/
+├── pyproject.toml
+├── alembic.ini
+├── migrations/
+├── app/
+│   ├── main.py          # FastAPI app và lifespan
+│   ├── api/             # routers và dependencies
+│   ├── schemas/         # Pydantic request/response/message
+│   ├── models/          # SQLAlchemy models của orders_db
+│   ├── services/        # use case và workflow
+│   ├── repositories/    # truy cập DB trong transaction
+│   ├── messaging/       # aio-pika consumers/publishers
+│   └── workers/         # outbox và phục hồi
+└── tests/
+```
+
+API, enum, database fields, command/event và trách nhiệm 5 service vẫn theo hợp đồng đã viết. Đây là cập nhật thiết kế, chưa tạo skeleton hoặc cài package.
 
 MVP bao gồm `payment-service`, `payments_db`, queue `payment.commands`, command `ProcessPayment`/`RefundPayment` và event kết quả. Order vẫn điều phối.
 
@@ -763,8 +796,11 @@ Mỗi người viết migration, Dockerfile và test của mình. Không dồn t
 
 ### K. Tài liệu chính thức tham khảo
 
-- [NestJS RabbitMQ](https://docs.nestjs.com/microservices/rabbitmq): transport và acknowledgement.
-- [Prisma PostgreSQL](https://docs.prisma.io/docs/orm/core-concepts/supported-databases/postgresql): hỗ trợ PostgreSQL.
+- [FastAPI](https://fastapi.tiangolo.com/): API, validation và OpenAPI.
+- [SQLAlchemy asyncio](https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html): async engine/session.
+- [Alembic](https://alembic.sqlalchemy.org/en/latest/tutorial.html): migration database.
+- [aio-pika](https://docs.aio-pika.com/): RabbitMQ client và publisher confirms.
+- [FastAPI testing](https://fastapi.tiangolo.com/tutorial/testing/): kiểm thử với pytest.
 - [Docker Compose application model](https://docs.docker.com/compose/intro/compose-application-model/): khai báo các container, mạng và volume.
 
 ## 2. Mục tiêu hệ thống
@@ -858,7 +894,7 @@ Giỏ chứa mã mặt hàng và số lượng mong muốn. Giá hiển thị ch
 
 ### 4.6. Payment trong MVP và Notification sau MVP
 
-MVP gồm **năm service nghiệp vụ**. Payment dùng NestJS + Prisma, sở hữu payments_db, có consumer RabbitMQ và worker outbox.
+MVP gồm **năm service nghiệp vụ**. Payment dùng FastAPI + SQLAlchemy, sở hữu payments_db, có consumer RabbitMQ và worker outbox.
 
 - **Payment:** bắt buộc trong MVP; tạo lần thanh toán, mô phỏng kết quả, ghi nhận thu COD, hoàn tiền mô phỏng và truy vấn kết quả.
 - **Notification:** cân nhắc tách khi gửi email hoặc thông báo tự động cần lịch sử gửi, thử lại và nhiều kênh.
