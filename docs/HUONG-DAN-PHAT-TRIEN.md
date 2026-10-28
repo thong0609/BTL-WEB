@@ -30,6 +30,8 @@ Các API thay đổi có idempotency phải test trùng/khác payload. Khi ghi �
 
 ## 5. Tích hợp và quan sát
 
+Frontend đã chọn Next.js + TypeScript, đề xuất App Router. Dev web dùng port 3100, gateway port 3000; `/api/v1` rewrite tới GATEWAY_URL server-side để browser gọi cùng origin. Client Components xử lý state/giỏ/polling; không cache chung dữ liệu tài khoản/đơn giữa người dùng. Không đặt secret trong NEXT_PUBLIC_*. Node cần cho cả build và chạy Next.js server; không cấu hình như Vite static build. Backend vẫn là nguồn xử lý nghiệp vụ. Tham khảo [Next.js App Router](https://nextjs.org/docs/app) và [environment variables](https://nextjs.org/docs/app/guides/environment-variables).
+
 Backend dùng FastAPI/Python theo quyết định 28/10/2026. Quy ước async session, worker bền vững, migration riêng, camelCase/tiền dạng chuỗi và chuẩn hóa validation 400 được mô tả ở mục “Quy ước triển khai FastAPI/Python” trong [hệ thống](MO-TA-HE-THONG.md). Backend CI đề xuất Ruff, mypy, pytest/HTTPX; frontend tiếp tục dùng toolchain TypeScript và Playwright. Mỗi service có pyproject.toml và lock dependencies; không chia sẻ ORM model xuyên service.
 
 Một request có requestId/correlationId xuyên gateway/service/message; log có mã đơn và thao tác, không chứa dữ liệu nhạy cảm. Healthcheck liveness phản ánh process; readiness phản ánh khả năng nhận việc với dependency cần thiết. Sau restart tự kết nối lại broker/database.

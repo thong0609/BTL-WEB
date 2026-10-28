@@ -19,7 +19,7 @@ Tất cả bản chính thức nằm trong `docs/`. Không tạo thêm bản sao
 
 - Một cửa hàng; 5 service nghiệp vụ: Identity, Catalog, Inventory, Order, Payment.
 - Payment mô phỏng nằm trong MVP. Thanh toán thật, vận chuyển tích hợp, nhiều người bán và đổi trả sau nhận nằm ngoài MVP.
-- Backend **FastAPI/Python đã được nhóm chọn ngày 28/10/2026**. Frontend React/TypeScript; thư viện phụ trợ đề xuất: PostgreSQL, SQLAlchemy/asyncpg, Alembic, Pydantic, aio-pika, pytest/HTTPX; triển khai Docker Compose.
+- Backend **FastAPI/Python**, frontend **Next.js + TypeScript** đã được nhóm chọn. Thư viện phụ trợ đề xuất: PostgreSQL, SQLAlchemy/asyncpg, Alembic, Pydantic, aio-pika, pytest/HTTPX; triển khai dev theo cấu hình Docker Compose khi cần.
 - Một kho, VND, COD, một cấu hình trên mỗi SKU và khung 8 tuần là giả định thiết kế hiện tại. Tên cửa hàng, ngành hàng, phí ship và nhân sự cụ thể còn cần nhóm chốt.
 
 ## Cách tra cứu một chức năng

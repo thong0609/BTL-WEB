@@ -38,7 +38,7 @@ Database test và PostgreSQL local tùy chọn dùng cùng tên schema để mig
 - Migration dùng role riêng từng schema, có DDL trong schema đó. Cấp default privileges phù hợp cho bảng/sequence mới, kiểm thử lại quyền sau migration.
 - SQLAlchemy khai báo schema tường minh; Alembic có version table trong schema service, include_schemas/include_object giới hạn đúng phạm vi, không autogenerate drop bảng của service khác.
 - Schema nghiệp vụ không được expose qua Supabase Data API. Kiểm tra danh sách schema expose và quyền anon/authenticated/PUBLIC; thu hồi quyền không cần thiết trên đối tượng của nhóm, không sửa bừa role/schema do Supabase quản lý.
-- Frontend chỉ gọi FastAPI qua gateway. Không đưa DB URL/password hoặc service-role key vào React/Vite. Dashboard có quyền cao, chỉ cấp người cần vận hành; xem dữ liệu thường ngày ưu tiên quyền đọc.
+- Frontend Next.js chỉ truy cập nghiệp vụ qua gateway/FastAPI, kể cả Server Components. Không đưa DB credential/service-role key vào frontend và đặc biệt không đặt secret trong NEXT_PUBLIC_*. Dashboard có quyền cao, chỉ cấp người cần vận hành; xem dữ liệu thường ngày ưu tiên quyền đọc.
 - Dùng secret theo môi trường và service; không commit connection string có password, không chụp ảnh/log chứa secret.
 
 Database role là lớp cô lập giữa service. RLS không tự thay thế kiểm tra quyền chủ đơn ở FastAPI khi backend dùng một runtime role chung cho nhiều khách; nếu thêm RLS phải thiết kế context và policy riêng, không bật rồi mặc định đã an toàn.

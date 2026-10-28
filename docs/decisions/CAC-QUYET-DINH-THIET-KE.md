@@ -7,7 +7,7 @@ Ngày lập 24/10/2026. Phân biệt **đã xác nhận bởi người dùng** v
 | DEC-01 | Một cửa hàng, không sàn nhiều người bán | Người dùng xác nhận | Không có shop, hoa hồng hoặc chia đơn theo người bán |
 | DEC-02 | Nhóm 5 người, định hướng microservices | Người dùng xác nhận | Cần contract và tích hợp sớm |
 | DEC-03 | Payment riêng, mô phỏng thuộc MVP | Người dùng xác nhận | 5 service nghiệp vụ; test thành công/thất bại/chậm và hoàn mô phỏng |
-| DEC-04 | React/TypeScript + FastAPI/Python; PostgreSQL/SQLAlchemy/Alembic/RabbitMQ/Compose | Backend FastAPI được người dùng xác nhận ngày 28/10/2026; các thư viện phụ trợ là đề xuất | Thay phương án NestJS trước đây; khóa phiên bản và kiểm tra tích hợp |
+| DEC-04 | Next.js/TypeScript + FastAPI/Python; PostgreSQL/SQLAlchemy/Alembic/RabbitMQ/Compose | Frontend Next.js/TypeScript và backend FastAPI được người dùng xác nhận; thư viện phụ trợ là đề xuất | Thay frontend Vite và backend NestJS trước đây; khóa phiên bản và kiểm tra tích hợp |
 | DEC-05 | Một kho, VND, COD và phí ship cố định | Đề xuất kế thừa | Giảm biến thể quy trình; giá trị phí chưa chốt |
 | DEC-06 | Một payment/order, một refund toàn phần/payment | Đề xuất | Retry cùng ID; thất bại đặt đơn mới sau hủy xong; không trả một phần |
 | DEC-07 | Order điều phối, không có Saga service riêng | Đề xuất | Workflow lưu DB và outbox, không chỉ giữ RAM |

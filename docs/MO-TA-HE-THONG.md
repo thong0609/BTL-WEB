@@ -11,7 +11,7 @@ Bộ tài liệu đi kèm: [hướng dẫn đọc](../README.md), [đặc tả n
 
 Tài liệu này chuyển mô tả website thành một thiết kế hệ thống ở mức khái niệm: hệ thống gồm những phần nào, ai chịu trách nhiệm cho dữ liệu nào, các phần phối hợp thế nào và MVP dừng ở đâu.
 
-Bản cập nhật này bổ sung kiến trúc kỹ thuật cụ thể tại mục 1A: React + TypeScript, FastAPI, PostgreSQL + SQLAlchemy/Alembic, RabbitMQ và Docker Compose. Đây là bộ công nghệ đề xuất để nhóm triển khai, chưa phải xác nhận mọi thành viên đã quen stack này. Khi bắt đầu code, khóa phiên bản tương thích bằng lockfile và image tag cụ thể.
+Bản cập nhật này bổ sung kiến trúc kỹ thuật cụ thể tại mục 1A: Next.js + TypeScript, FastAPI, PostgreSQL + SQLAlchemy/Alembic, RabbitMQ và Docker Compose. Next.js/TypeScript và FastAPI/Python đã được nhóm chọn; thư viện phụ trợ là đề xuất triển khai. Khi bắt đầu code, khóa phiên bản tương thích bằng lockfile và image tag cụ thể.
 
 **Cập nhật 28/10/2026:** nhóm đã chọn FastAPI/Python cho backend, bao gồm gateway và năm service. SQLAlchemy, Alembic, aio-pika và thư viện phụ trợ dưới đây là đề xuất đi kèm để triển khai stack Python thống nhất.
 
@@ -27,10 +27,10 @@ Bản cập nhật này bổ sung kiến trúc kỹ thuật cụ thể tại m�
 
 | Lớp | Công nghệ | Vai trò | Ưu tiên |
 | --- | --- | --- | --- |
-| Ngôn ngữ | TypeScript (frontend), Python (backend) | React và các service FastAPI | MVP |
-| Frontend | React + Vite | Website khách hàng và khu quản trị | MVP |
-| Điều hướng | React Router | Trang sản phẩm, giỏ, đơn, quản trị | MVP |
-| Dữ liệu frontend | TanStack Query | Gọi API, loading/error, polling trạng thái đơn | MVP |
+| Ngôn ngữ | TypeScript (frontend), Python (backend) | Next.js và các service FastAPI | MVP |
+| Frontend | Next.js, dựa trên React | Website khách hàng và khu quản trị; nhóm đã chọn | MVP |
+| Điều hướng | Next.js App Router (đề xuất) | Page/layout theo thư mục, không cần React Router | MVP |
+| Dữ liệu frontend | fetch và TanStack Query khi cần | Server fetch cho trang phù hợp; Client Components cho state/polling | MVP |
 | Giao diện | Tailwind CSS | Responsive và trình bày thống nhất | MVP |
 | Runtime backend | Python + Uvicorn | Chạy ứng dụng ASGI của gateway và service | MVP |
 | Backend | FastAPI + Pydantic | API, validation và phân quyền; consumer riêng dùng aio-pika | MVP |
@@ -42,7 +42,7 @@ Bản cập nhật này bổ sung kiến trúc kỹ thuật cụ thể tại m�
 | Tài liệu API | OpenAPI/Swagger | Endpoint, request, response, lỗi | MVP |
 | Đóng gói | Docker | Image riêng từng ứng dụng | MVP |
 | Chạy hệ thống | Docker Compose | Container, network, volume và cấu hình | MVP |
-| Public HTTP | Nginx | Phục vụ frontend, chuyển `/api` đến gateway | MVP |
+| Public HTTP dev | Next.js rewrites; Nginx tùy nhu cầu | Next.js server phục vụ web; `/api/v1` chuyển tới gateway | MVP |
 | Log | Python logging + structlog, JSON | Tra cứu theo service, requestId, orderId | MVP |
 | Backend test | pytest + HTTPX + AnyIO | Test nghiệp vụ và HTTP integration | MVP |
 | E2E | Playwright | Kiểm thử luồng khách và quản trị | MVP |
@@ -56,7 +56,7 @@ Chưa cần Redis, Elasticsearch, Kafka, gRPC, service mesh hoặc Knative trong
 
 | Ứng dụng | Công nghệ | Database | HTTP port nội bộ đề xuất | Trách nhiệm |
 | --- | --- | --- | --- | --- |
-| `web` | React; build phục vụ qua Nginx | Không | 80 khi đóng gói | Mua sắm, quản trị |
+| `web` | Next.js + TypeScript, Node server | Không | 3100 | Mua sắm, quản trị; tránh trùng gateway 3000 |
 | `api-gateway` | FastAPI | Không | 3000 | Routing, xác thực yêu cầu ngoài, tổng hợp dữ liệu đọc |
 | `identity-service` | FastAPI + SQLAlchemy | `identity_db` | 3001 | Tài khoản, vai trò, phiên đăng nhập |
 | `catalog-service` | FastAPI + SQLAlchemy | `catalog_db` | 3002 | Sản phẩm, danh mục, giá, ảnh |
@@ -72,7 +72,7 @@ Các port trên là quy ước nội bộ. Triển khai chỉ public web qua HTT
 
 ```mermaid
 flowchart TD
-    Browser[Trình duyệt] --> Web[Nginx: React build và /api]
+    Browser[Trình duyệt] --> Web[Next.js server: web và rewrite /api/v1]
     Web --> GW[FastAPI API Gateway]
     GW --> Auth[FastAPI Identity]
     GW --> Cat[FastAPI Catalog]
@@ -696,7 +696,7 @@ Production chưa được bàn hoặc chốt môi trường triển khai. Khi c�
 
 #### Quy ước triển khai FastAPI/Python
 
-- Mỗi backend có `pyproject.toml`, dependency lock, package Python, Pydantic schemas, SQLAlchemy models, Alembic migrations và test riêng. Node.js dùng cho công cụ frontend React/Vite, không dùng chạy backend.
+- Mỗi backend có `pyproject.toml`, dependency lock, package Python, Pydantic schemas, SQLAlchemy models, Alembic migrations và test riêng. Node.js dùng build/chạy Next.js server; các service nghiệp vụ tiếp tục chạy Python/FastAPI.
 - HTTP server dùng Uvicorn; FastAPI router/dependency kiểm tra đầu vào và quyền. Gateway dùng HTTPX AsyncClient để chuyển tiếp/tổng hợp, có timeout/pool giới hạn, chỉ cho route upstream khai báo sẵn; không nhận URL tùy ý từ client và không tự viết lại quy tắc nghiệp vụ.
 - SQLAlchemy async với asyncpg; một AsyncSession cho mỗi request hoặc lần xử lý message/job. Không chia sẻ session giữa các coroutine, không giữ transaction DB mở trong lúc chờ HTTP/broker. Dữ liệu nghiệp vụ và inbox/outbox vẫn commit cùng transaction cục bộ.
 - RabbitMQ dùng aio-pika cho consumer/publisher. Worker outbox, consumer và job đối chiếu là công việc bền vững dựa trên DB/broker; không dùng FastAPI BackgroundTasks làm hàng đợi cho thao tác tiền/tồn. Nếu chạy cùng tiến trình MVP, quản lý khởi động/tắt qua lifespan và phục hồi; nhiều process/replica vẫn cần claim/lease và idempotency.
