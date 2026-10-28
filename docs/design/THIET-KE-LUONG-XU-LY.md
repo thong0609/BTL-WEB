@@ -1,6 +1,6 @@
 # Thiết kế luồng xử lý và trạng thái
 
-Phiên bản 0.1. Nguồn dữ liệu: Order sở hữu đơn/workflow, Inventory sở hữu reservation và lượng kho, Payment sở hữu tiền. Tham chiếu [DB](MO-TA-HE-THONG.md), [message](contracts/MESSAGES.md).
+Phiên bản 0.1. Nguồn dữ liệu: Order sở hữu đơn/workflow, Inventory sở hữu reservation và lượng kho, Payment sở hữu tiền. Tham chiếu [DB](MO-TA-HE-THONG.md), [message](../contracts/MESSAGES.md).
 
 ## 1. Trạng thái đơn
 

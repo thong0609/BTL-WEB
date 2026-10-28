@@ -1,0 +1,54 @@
+[project]
+name = "commerce-workspace"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[tool.uv]
+package = false
+required-version = "==0.12.19"
+
+[tool.uv.workspace]
+members = [
+  "apps/api-gateway",
+  "apps/identity-service",
+  "apps/catalog-service",
+  "apps/inventory-service",
+  "apps/order-service",
+  "apps/payment-service",
+  "packages/backend-common",
+]
+
+[tool.uv.sources]
+commerce-backend-common = { workspace = true }
+
+[dependency-groups]
+dev = [
+  "ruff>=0.12,<1",
+  "mypy>=1.15,<2",
+  "pytest>=8,<10",
+  "httpx>=0.28,<1",
+  "anyio>=4,<5",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["apps/*/src", "packages/*/src"]
+extend-exclude = [".venv-incomplete"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["apps", "packages/backend-common"]
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers"
+testpaths = ["tests"]
+markers = [
+  "integration: requires isolated PostgreSQL or RabbitMQ test services",
+]

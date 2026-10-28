@@ -1,6 +1,6 @@
 # Đặc tả nghiệp vụ MVP
 
-Phiên bản 0.1 — 24/10/2026. Tham chiếu [sản phẩm](MO-TA-WEBSITE.md), [workflow](THIET-KE-LUONG-XU-LY.md), [API](contracts/HTTP-API.md). Đây là đề xuất chi tiết hóa phạm vi đã thống nhất.
+Phiên bản 0.1 — 24/10/2026. Tham chiếu [sản phẩm](MO-TA-WEBSITE.md), [workflow](../design/THIET-KE-LUONG-XU-LY.md), [API](../contracts/HTTP-API.md). Đây là đề xuất chi tiết hóa phạm vi đã thống nhất.
 
 ## 1. Vai trò và quy tắc chung
 

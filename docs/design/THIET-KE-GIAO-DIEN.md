@@ -1,6 +1,6 @@
 # Thiết kế giao diện và điều hướng
 
-Wireframe nội dung phiên bản 0.1; chưa phải bản thiết kế đồ họa hoặc website đã xây. Tham chiếu [use case](DAC-TA-NGHIEP-VU.md), [API](contracts/HTTP-API.md).
+Wireframe nội dung phiên bản 0.1; chưa phải bản thiết kế đồ họa hoặc website đã xây. Tham chiếu [use case](../product/DAC-TA-NGHIEP-VU.md), [API](../contracts/HTTP-API.md).
 
 ## 1. Sơ đồ trang
 

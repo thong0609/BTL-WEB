@@ -19,7 +19,7 @@ Ngày lập 24/10/2026. Phân biệt **đã xác nhận bởi người dùng** v
 
 ## Các mục cần chốt trong buổi khởi động
 
-**DEC-13 — Supabase PostgreSQL cho dev chung (28/10/2026, ACCEPTED, đã làm rõ):** dev hằng ngày của nhóm dùng một project, database `postgres`, 5 schema và role runtime/migration riêng. Thành viên chạy backend trên laptop kết nối DB dev này, không bắt buộc DB local cá nhân. Test reset dùng DB riêng cùng schema; local độc lập là tùy chọn. Broker dev chung, worker/service chạy theo phân công trên máy thành viên hoặc host dev. Production chưa quyết định. Tên *_db là miền dữ liệu logic; cấm truy cập chéo/FK xuyên service. Chưa tạo tài nguyên thực tế. Xem [chi tiết](../PHUONG-AN-SUPABASE.md).
+**DEC-13 — Supabase PostgreSQL cho dev chung (28/10/2026, ACCEPTED, đã làm rõ):** dev hằng ngày của nhóm dùng một project, database `postgres`, 5 schema và role runtime/migration riêng. Thành viên chạy backend trên laptop kết nối DB dev này, không bắt buộc DB local cá nhân. Test reset dùng DB riêng cùng schema; local độc lập là tùy chọn. Broker dev chung, worker/service chạy theo phân công trên máy thành viên hoặc host dev. Production chưa quyết định. Tên *_db là miền dữ liệu logic; cấm truy cập chéo/FK xuyên service. Chưa tạo tài nguyên thực tế. Xem [chi tiết](../infrastructure/PHUONG-AN-SUPABASE.md).
 
 Tên/ngành hàng; thời hạn và giờ mỗi người; phí ship; quyền ADMIN có cần tách không; giới hạn ảnh/số dòng; khoảng polling/retry/cảnh báo; cách triển khai HTTPS/service credential; tiêu chí môi trường demo. Kiểm tra yêu cầu giảng viên trước khi biến Kubernetes hoặc thanh toán thật thành đầu việc.
 

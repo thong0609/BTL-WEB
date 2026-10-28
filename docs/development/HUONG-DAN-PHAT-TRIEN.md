@@ -2,13 +2,13 @@
 
 ## 1. Trạng thái hiện tại
 
-Repository hiện chứa tài liệu phân tích/thiết kế. Chưa có package.json cho frontend, pyproject.toml cho backend, Compose, migration hoặc bộ test ứng dụng để chạy. Các lệnh vận hành sẽ được bổ sung sau task INF-01 và phải do một thành viên khác thử lại trên máy sạch. Không coi tên công cụ trong tài liệu là đã cài đặt.
+Đã setup bước 1: uv workspace, pyproject.toml từng backend package, lockfile, frontend manifest/tooling, lint/typecheck và gitignore. Xem [SETUP-STEP-1.md](SETUP-STEP-1.md) để biết phiên bản, lệnh đã kiểm tra và workaround dung lượng máy hiện tại. Chưa có app FastAPI, Next.js page/layout, Compose, migration hoặc bộ test ứng dụng. Lệnh chạy ứng dụng sẽ được bổ sung khi triển khai các bước sau và phải được thử lại, không coi công cụ đã cài là tính năng đã hoạt động.
 
 ## 2. Trước khi bắt đầu code
 
-Supabase là **database dev dùng chung ngay khi cả nhóm phát triển**, theo làm rõ ngày 28/10/2026; đọc [thiết kế kết nối và phối hợp](PHUONG-AN-SUPABASE.md). FastAPI có thể chạy trên laptop, DATABASE_URL trỏ Supabase dev theo role service mình; không bắt buộc mỗi người có DB local. Một project/database có 5 schema và role riêng. Test cần reset dùng DB riêng cùng tên schema. Worker có thể chạy trên laptop theo phân công, nhưng dùng broker dev chung và tránh nhiều bản code khác nhau tranh cùng queue/outbox. Production chưa tính tới.
+Supabase là **database dev dùng chung ngay khi cả nhóm phát triển**, theo làm rõ ngày 28/10/2026; đọc [thiết kế kết nối và phối hợp](../infrastructure/PHUONG-AN-SUPABASE.md). FastAPI có thể chạy trên laptop, DATABASE_URL trỏ Supabase dev theo role service mình; không bắt buộc mỗi người có DB local. Một project/database có 5 schema và role riêng. Test cần reset dùng DB riêng cùng tên schema. Worker có thể chạy trên laptop theo phân công, nhưng dùng broker dev chung và tránh nhiều bản code khác nhau tranh cùng queue/outbox. Production chưa tính tới.
 
-Đọc [README](../README.md), use case và contract của phần mình. Điền tên chủ trì/reviewer trong kế hoạch, review quyết định còn mở và khóa phiên bản Python/backend dependencies, Node/frontend packages, database và broker. Dựng khung repository theo file hệ thống; mỗi service có env example, schema, migration, healthcheck, Dockerfile và test.
+Đọc [README](../../README.md), use case và contract của phần mình. Điền tên chủ trì/reviewer trong kế hoạch, review quyết định còn mở và khóa phiên bản Python/backend dependencies, Node/frontend packages, database và broker. Dựng khung repository theo file hệ thống; mỗi service có env example, schema, migration, healthcheck, Dockerfile và test.
 
 Người dựng môi trường phải bổ sung: yêu cầu máy/OS; cài đặt đã kiểm chứng; lệnh cài dependency; build/start/stop; chạy một service; migration; seed; test; reset test; backup/restore; xem log và cách xử lý port trùng. Chỉ ghi lệnh sau khi chạy thành công, không sao chép lệnh giả định vào README.
 
@@ -32,7 +32,7 @@ Các API thay đổi có idempotency phải test trùng/khác payload. Khi ghi �
 
 Frontend đã chọn Next.js + TypeScript, đề xuất App Router. Dev web dùng port 3100, gateway port 3000; `/api/v1` rewrite tới GATEWAY_URL server-side để browser gọi cùng origin. Client Components xử lý state/giỏ/polling; không cache chung dữ liệu tài khoản/đơn giữa người dùng. Không đặt secret trong NEXT_PUBLIC_*. Node cần cho cả build và chạy Next.js server; không cấu hình như Vite static build. Backend vẫn là nguồn xử lý nghiệp vụ. Tham khảo [Next.js App Router](https://nextjs.org/docs/app) và [environment variables](https://nextjs.org/docs/app/guides/environment-variables).
 
-Backend dùng FastAPI/Python theo quyết định 28/10/2026. Quy ước async session, worker bền vững, migration riêng, camelCase/tiền dạng chuỗi và chuẩn hóa validation 400 được mô tả ở mục “Quy ước triển khai FastAPI/Python” trong [hệ thống](MO-TA-HE-THONG.md). Backend CI đề xuất Ruff, mypy, pytest/HTTPX; frontend tiếp tục dùng toolchain TypeScript và Playwright. Mỗi service có pyproject.toml và lock dependencies; không chia sẻ ORM model xuyên service.
+Backend dùng FastAPI/Python theo quyết định 28/10/2026. Quy ước async session, worker bền vững, migration riêng, camelCase/tiền dạng chuỗi và chuẩn hóa validation 400 được mô tả ở mục “Quy ước triển khai FastAPI/Python” trong [hệ thống](../design/MO-TA-HE-THONG.md). Backend CI đề xuất Ruff, mypy, pytest/HTTPX; frontend tiếp tục dùng toolchain TypeScript và Playwright. Mỗi service có pyproject.toml và lock dependencies; không chia sẻ ORM model xuyên service.
 
 Một request có requestId/correlationId xuyên gateway/service/message; log có mã đơn và thao tác, không chứa dữ liệu nhạy cảm. Healthcheck liveness phản ánh process; readiness phản ánh khả năng nhận việc với dependency cần thiết. Sau restart tự kết nối lại broker/database.
 

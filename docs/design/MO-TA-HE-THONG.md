@@ -3,9 +3,9 @@
 Ngày lập: 24/10/2026  
 Sản phẩm: Website thương mại điện tử cho một cửa hàng  
 Nhóm: 5 thành viên — thời gian kế hoạch: 8 tuần  
-Tài liệu liên quan: [Mô tả website](./MO-TA-WEBSITE.md)
+Tài liệu liên quan: [Mô tả website](../product/MO-TA-WEBSITE.md)
 
-Bộ tài liệu đi kèm: [hướng dẫn đọc](../README.md), [đặc tả nghiệp vụ](DAC-TA-NGHIEP-VU.md), [giao diện](THIET-KE-GIAO-DIEN.md), [workflow](THIET-KE-LUONG-XU-LY.md), [HTTP/OpenAPI](contracts/HTTP-API.md), [message](contracts/MESSAGES.md), [kế hoạch](KE-HOACH-THUC-HIEN.md), [kiểm thử](KE-HOACH-KIEM-THU.md). Phần đặc tả mới bổ sung quote và chi tiết API quản trị; dùng hợp đồng trong `contracts/` khi triển khai, danh sách endpoint bên dưới là bản tổng quan.
+Bộ tài liệu đi kèm: [hướng dẫn đọc](../../README.md), [đặc tả nghiệp vụ](../product/DAC-TA-NGHIEP-VU.md), [giao diện](THIET-KE-GIAO-DIEN.md), [workflow](THIET-KE-LUONG-XU-LY.md), [HTTP/OpenAPI](../contracts/HTTP-API.md), [message](../contracts/MESSAGES.md), [kế hoạch](../project/KE-HOACH-THUC-HIEN.md), [kiểm thử](../testing/KE-HOACH-KIEM-THU.md). Phần đặc tả mới bổ sung quote và chi tiết API quản trị; dùng hợp đồng trong `contracts/` khi triển khai, danh sách endpoint bên dưới là bản tổng quan.
 
 ## 1. Mục đích và trạng thái tài liệu
 
@@ -91,7 +91,7 @@ flowchart TD
     Pay --> PDB[(payments_db)]
 ```
 
-**Đã chốt Supabase cho dev 28/10/2026:** nhóm phát triển hằng ngày trên cùng database Supabase `postgres`, với 5 schema: `commerce_identity`, `commerce_catalog`, `commerce_inventory`, `commerce_orders`, `commerce_payments`. Backend có thể chạy trên laptop mỗi thành viên, kết nối DB dev chung bằng role service riêng để đọc cùng dữ liệu. Mỗi service có runtime/migration role giới hạn schema mình. Test cần reset dùng PostgreSQL riêng cùng tên schema; DB local độc lập là tùy chọn, không bắt buộc cho dev. **Production chưa quyết định.** Tên *_db trong sơ đồ/bảng là miền dữ liệu logic, không phải 5 database vật lý. Xem [PHUONG-AN-SUPABASE.md](PHUONG-AN-SUPABASE.md). Cấm FK/join/truy cập chéo service; tài nguyên thực tế chưa tạo/kiểm chứng.
+**Đã chốt Supabase cho dev 28/10/2026:** nhóm phát triển hằng ngày trên cùng database Supabase `postgres`, với 5 schema: `commerce_identity`, `commerce_catalog`, `commerce_inventory`, `commerce_orders`, `commerce_payments`. Backend có thể chạy trên laptop mỗi thành viên, kết nối DB dev chung bằng role service riêng để đọc cùng dữ liệu. Mỗi service có runtime/migration role giới hạn schema mình. Test cần reset dùng PostgreSQL riêng cùng tên schema; DB local độc lập là tùy chọn, không bắt buộc cho dev. **Production chưa quyết định.** Tên *_db trong sơ đồ/bảng là miền dữ liệu logic, không phải 5 database vật lý. Xem [PHUONG-AN-SUPABASE.md](../infrastructure/PHUONG-AN-SUPABASE.md). Cấm FK/join/truy cập chéo service; tài nguyên thực tế chưa tạo/kiểm chứng.
 
 ### D. API HTTP dự kiến
 

@@ -1,6 +1,6 @@
 # Hợp đồng command và event
 
-Version 1 — bản thiết kế MVP. Command là yêu cầu; event là kết quả đã commit. Order điều phối, Inventory/Payment không tự quyết định kết thúc đơn. Liên quan [workflow](../THIET-KE-LUONG-XU-LY.md).
+Version 1 — bản thiết kế MVP. Command là yêu cầu; event là kết quả đã commit. Order điều phối, Inventory/Payment không tự quyết định kết thúc đơn. Liên quan [workflow](../design/THIET-KE-LUONG-XU-LY.md).
 
 ## 1. Envelope bắt buộc
 

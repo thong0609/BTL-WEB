@@ -1,17 +1,19 @@
 # Website bán hàng cho một cửa hàng
 
-Bộ phân tích và thiết kế ban đầu cho nhóm 5 thành viên. Sản phẩm hỗ trợ mua hàng, quản trị sản phẩm, tồn kho, xử lý đơn, COD và thanh toán mô phỏng. **Hiện repository chứa tài liệu, chưa có ứng dụng chạy được.**
+Bộ phân tích và thiết kế ban đầu cho nhóm 5 thành viên. Sản phẩm hỗ trợ mua hàng, quản trị sản phẩm, tồn kho, xử lý đơn, COD và thanh toán mô phỏng. **Đã bắt đầu setup bước 1: cấu trúc package và toolchain; chưa có ứng dụng chạy được.** Xem [kết quả và lệnh kiểm tra bước 1](docs/development/SETUP-STEP-1.md).
 
 ## Đọc từ đâu?
 
-1. [Mô tả website](docs/MO-TA-WEBSITE.md): người dùng, chức năng và phạm vi sản phẩm.
-2. [Đặc tả nghiệp vụ](docs/DAC-TA-NGHIEP-VU.md): điều kiện, các bước và ngoại lệ của từng thao tác.
-3. [Thiết kế giao diện](docs/THIET-KE-GIAO-DIEN.md): trang, form, nút và trạng thái hiển thị.
-4. [Mô tả hệ thống](docs/MO-TA-HE-THONG.md): stack đề xuất, 5 service và database chi tiết.
-5. [Thiết kế luồng xử lý](docs/THIET-KE-LUONG-XU-LY.md): trạng thái, sequence và phục hồi.
+Xem [mục lục theo nhóm](docs/README.md) để tìm tài liệu sản phẩm, thiết kế, phát triển, hạ tầng, kế hoạch và kiểm thử.
+
+1. [Mô tả website](docs/product/MO-TA-WEBSITE.md): người dùng, chức năng và phạm vi sản phẩm.
+2. [Đặc tả nghiệp vụ](docs/product/DAC-TA-NGHIEP-VU.md): điều kiện, các bước và ngoại lệ của từng thao tác.
+3. [Thiết kế giao diện](docs/design/THIET-KE-GIAO-DIEN.md): trang, form, nút và trạng thái hiển thị.
+4. [Mô tả hệ thống](docs/design/MO-TA-HE-THONG.md): stack đề xuất, 5 service và database chi tiết.
+5. [Thiết kế luồng xử lý](docs/design/THIET-KE-LUONG-XU-LY.md): trạng thái, sequence và phục hồi.
 6. [Hợp đồng HTTP](docs/contracts/HTTP-API.md), [OpenAPI](docs/contracts/openapi.yaml) và [message](docs/contracts/MESSAGES.md): cách các phần trao đổi dữ liệu.
-7. [Kế hoạch thực hiện](docs/KE-HOACH-THUC-HIEN.md) và [kiểm thử](docs/KE-HOACH-KIEM-THU.md): đầu việc, phụ thuộc, điều kiện nghiệm thu.
-8. [Hướng dẫn phát triển](docs/HUONG-DAN-PHAT-TRIEN.md) và [quyết định thiết kế](docs/decisions/CAC-QUYET-DINH-THIET-KE.md).
+7. [Kế hoạch thực hiện](docs/project/KE-HOACH-THUC-HIEN.md) và [kiểm thử](docs/testing/KE-HOACH-KIEM-THU.md): đầu việc, phụ thuộc, điều kiện nghiệm thu.
+8. [Hướng dẫn phát triển](docs/development/HUONG-DAN-PHAT-TRIEN.md) và [quyết định thiết kế](docs/decisions/CAC-QUYET-DINH-THIET-KE.md).
 
 Tất cả bản chính thức nằm trong `docs/`. Không tạo thêm bản sao ở thư mục gốc. Đây là phiên bản thiết kế 0.1; các quy tắc chi tiết mới là đề xuất triển khai, cần nhóm review trước khi code, không phải sản phẩm đã được kiểm chứng.
 
@@ -50,6 +52,6 @@ Ví dụ hủy đơn: **UC-ORD-03 → UI-08 → POST /orders/{id}/cancel → Rel
 
 ## Quản lý thay đổi
 
-**Đã chốt và làm rõ 28/10/2026:** dev hằng ngày của nhóm dùng chung Supabase, database `postgres`, 5 schema/role riêng theo service. Backend có thể chạy trên laptop mỗi người và kết nối DB dev này để cùng thấy dữ liệu. Test cần reset dùng DB riêng; PostgreSQL local độc lập chỉ là tùy chọn. **Production chưa quyết định.** Xem [thiết kế Supabase](docs/PHUONG-AN-SUPABASE.md) về kết nối và phối hợp worker/broker. Chưa tạo/kiểm chứng tài nguyên thực tế.
+**Đã chốt và làm rõ 28/10/2026:** dev hằng ngày của nhóm dùng chung Supabase, database `postgres`, 5 schema/role riêng theo service. Backend có thể chạy trên laptop mỗi người và kết nối DB dev này để cùng thấy dữ liệu. Test cần reset dùng DB riêng; PostgreSQL local độc lập chỉ là tùy chọn. **Production chưa quyết định.** Xem [thiết kế Supabase](docs/infrastructure/PHUONG-AN-SUPABASE.md) về kết nối và phối hợp worker/broker. Chưa tạo/kiểm chứng tài nguyên thực tế.
 
 Quy tắc nghiệp vụ nằm ở đặc tả; trạng thái/quy trình nằm ở thiết kế luồng; cấu trúc HTTP nằm ở OpenAPI; cấu trúc message nằm ở MESSAGES; cấu trúc DB nằm ở mô tả hệ thống. Nếu phát hiện xung đột, tạo ghi chú và sửa các tài liệu liên quan trong cùng PR trước khi triển khai. Không tự chọn cách hiểu riêng ở từng service.
