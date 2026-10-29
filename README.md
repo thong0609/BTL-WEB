@@ -1,6 +1,6 @@
 # Website bán hàng cho một cửa hàng
 
-Bộ phân tích và thiết kế ban đầu cho nhóm 5 thành viên. Sản phẩm hỗ trợ mua hàng, quản trị sản phẩm, tồn kho, xử lý đơn, COD và thanh toán mô phỏng. **Đã bắt đầu setup bước 1: cấu trúc package và toolchain; chưa có ứng dụng chạy được.** Xem [kết quả và lệnh kiểm tra bước 1](docs/development/SETUP-STEP-1.md).
+Bộ phân tích và thiết kế ban đầu cho nhóm 5 thành viên. Sản phẩm hỗ trợ mua hàng, quản trị sản phẩm, tồn kho, xử lý đơn, COD và thanh toán mô phỏng. **Đã hoàn thành setup bước 1–2: toolchain và skeleton FastAPI chạy được; chưa có nghiệp vụ hoặc kết nối DB/broker.** Xem [bước 1](docs/development/SETUP-STEP-1.md) và [hướng dẫn chạy bước 2](docs/development/SETUP-STEP-2.md).
 
 ## Đọc từ đâu?
 

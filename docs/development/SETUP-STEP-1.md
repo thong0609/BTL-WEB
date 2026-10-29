@@ -1,5 +1,7 @@
 # Kết quả setup bước 1 — cấu trúc và toolchain
 
+Bản ghi tại thời điểm hoàn tất bước 1. Skeleton backend đã được bổ sung sau đó; trạng thái mới nhất và cách chạy nằm tại [SETUP-STEP-2.md](SETUP-STEP-2.md).
+
 ## Phạm vi
 
 Repo hiện có bộ khung package và công cụ; chưa có FastAPI app, HTTP route, Next.js page/layout, kết nối Supabase hoặc worker nghiệp vụ. Phần đó thực hiện ở các bước sau trong [plan](../../plans/SETUP-BASE.md).

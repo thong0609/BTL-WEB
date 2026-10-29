@@ -2,7 +2,7 @@
 
 ## 1. Trạng thái hiện tại
 
-Đã setup bước 1: uv workspace, pyproject.toml từng backend package, lockfile, frontend manifest/tooling, lint/typecheck và gitignore. Xem [SETUP-STEP-1.md](SETUP-STEP-1.md) để biết phiên bản, lệnh đã kiểm tra và workaround dung lượng máy hiện tại. Chưa có app FastAPI, Next.js page/layout, Compose, migration hoặc bộ test ứng dụng. Lệnh chạy ứng dụng sẽ được bổ sung khi triển khai các bước sau và phải được thử lại, không coi công cụ đã cài là tính năng đã hoạt động.
+Đã setup bước 1–2: workspace/tooling và 6 skeleton FastAPI có settings/lifespan/health/errors/logs, gateway diagnostic, env example, Dockerfile và test. Xem [bước 1](SETUP-STEP-1.md) về toolchain, [bước 2](SETUP-STEP-2.md) về lệnh chạy và kết quả kiểm tra. Chưa có DB/broker client, migration, nghiệp vụ, Next.js page/layout hoặc Compose. Dockerfile chưa build do daemon chưa chạy.
 
 ## 2. Trước khi bắt đầu code
 
