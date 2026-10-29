@@ -1,6 +1,7 @@
 """FastAPI construction and health contracts, without infrastructure clients."""
 
-from collections.abc import AsyncIterator, Callable
+import asyncio
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
 import structlog
@@ -27,14 +28,15 @@ def build_app(settings: ServiceSettings, resources: AppLifespan | None = None) -
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         configure_logging()
-        app.state.started = True
         log = structlog.get_logger().bind(service=settings.service_name)
         try:
             if resources is not None:
                 async with resources(app):
+                    app.state.started = True
                     log.info("service_started")
                     yield
             else:
+                app.state.started = True
                 log.info("service_started")
                 yield
         finally:
@@ -44,6 +46,7 @@ def build_app(settings: ServiceSettings, resources: AppLifespan | None = None) -
     app = FastAPI(title=settings.service_name, version="0.1.0", lifespan=lifespan)
     app.state.settings = settings
     app.state.started = False
+    app.state.readiness_checks = {}
     register_error_handlers(app)
     app.add_middleware(RequestContextMiddleware, service_name=settings.service_name)
     # CORS outside the exception-sanitizing middleware includes CORS on 500 responses.
@@ -68,11 +71,24 @@ def build_app(settings: ServiceSettings, resources: AppLifespan | None = None) -
             ("database", settings.database_enabled, settings.database_url),
             ("broker", settings.broker_enabled, settings.broker_url),
         ):
-            checks[dependency] = (
-                ("check_not_implemented" if url else "missing_configuration")
-                if enabled
-                else "disabled"
-            )
+            if not enabled:
+                checks[dependency] = "disabled"
+            elif not url:
+                checks[dependency] = "missing_configuration"
+            else:
+                registry: dict[str, Callable[[], Awaitable[str]]] = (
+                    request.app.state.readiness_checks
+                )
+                check = registry.get(dependency)
+                if check is None:
+                    checks[dependency] = "check_not_implemented"
+                else:
+                    try:
+                        checks[dependency] = await asyncio.wait_for(
+                            check(), timeout=settings.readiness_timeout_seconds
+                        )
+                    except Exception:
+                        checks[dependency] = "unavailable"
         ok = all(value in {"ready", "disabled"} for value in checks.values())
         body = HealthResponse(
             service=settings.service_name,

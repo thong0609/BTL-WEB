@@ -16,6 +16,7 @@ class ServiceSettings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3100"]
     http_timeout_seconds: float = Field(default=5.0, gt=0, le=60)
     http_max_connections: int = Field(default=20, ge=1, le=100)
+    readiness_timeout_seconds: float = Field(default=6, gt=0, le=30)
     database_enabled: bool = False
     broker_enabled: bool = False
     database_url: SecretStr | None = None

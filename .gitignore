@@ -28,6 +28,7 @@ build/
 *.log
 logs/
 uploads/
+infra/supabase/certs/
 coverage/
 test-results/
 playwright-report/

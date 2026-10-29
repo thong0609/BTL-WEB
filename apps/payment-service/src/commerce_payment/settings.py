@@ -6,10 +6,11 @@ from typing import Literal
 from pydantic import Field
 from pydantic_settings import SettingsConfigDict
 
-from commerce_backend_common.settings import ServiceSettings
+from commerce_backend_common.database import DatabaseSettings
 
 
-class Settings(ServiceSettings):
+class Settings(DatabaseSettings):
     model_config = SettingsConfigDict(env_file=Path(__file__).resolve().parents[2] / ".env")
     service_name: Literal["payment-service"] = "payment-service"
     http_port: int = Field(default=3005, ge=1024, le=65535)
+    db_schema: Literal["commerce_payments"] = "commerce_payments"

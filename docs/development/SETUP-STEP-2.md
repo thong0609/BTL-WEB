@@ -1,5 +1,7 @@
 # Setup bước 2 — skeleton FastAPI và tiện ích chung
 
+Bản ghi kết quả tại bước 2. Nền tảng DB đã được bổ sung ở [bước 3](SETUP-STEP-3.md); các giới hạn DB chưa triển khai bên dưới mô tả thời điểm bước 2, không thay trạng thái mới nhất.
+
 ## 1. Kết quả
 
 Gateway và 5 service đã có app factory, settings riêng, lifespan, router health, entrypoint Python, env example và Dockerfile. Package chung cung cấp settings nền, log JSON, request ID, xử lý lỗi và quy ước serialization. Không chứa entity, ORM model hoặc nghiệp vụ.

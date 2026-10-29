@@ -60,7 +60,9 @@ def test_enabled_dependency_is_not_falsely_ready(dependency, configured):
         ready = client.get("/health/ready")
         assert ready.status_code == 503
         assert ready.json()["checks"][dependency] == (
-            "check_not_implemented" if configured else "missing_configuration"
+            ("invalid_configuration" if dependency == "database" else "check_not_implemented")
+            if configured
+            else "missing_configuration"
         )
         assert "secret-placeholder" not in ready.text
 

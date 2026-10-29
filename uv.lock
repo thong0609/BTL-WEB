@@ -159,13 +159,24 @@ dependencies = [
     { name = "structlog" },
 ]
 
+[package.optional-dependencies]
+database = [
+    { name = "alembic" },
+    { name = "asyncpg" },
+    { name = "sqlalchemy", extra = ["asyncio"] },
+]
+
 [package.metadata]
 requires-dist = [
+    { name = "alembic", marker = "extra == 'database'", specifier = ">=1.15,<2" },
+    { name = "asyncpg", marker = "extra == 'database'", specifier = ">=0.30,<1" },
     { name = "fastapi", specifier = ">=0.115,<1" },
     { name = "pydantic", specifier = ">=2,<3" },
     { name = "pydantic-settings", specifier = ">=2,<3" },
+    { name = "sqlalchemy", extras = ["asyncio"], marker = "extra == 'database'", specifier = ">=2.0,<3" },
     { name = "structlog", specifier = ">=25,<27" },
 ]
+provides-extras = ["database"]
 
 [[package]]
 name = "commerce-catalog-service"
@@ -174,7 +185,7 @@ source = { editable = "apps/catalog-service" }
 dependencies = [
     { name = "alembic" },
     { name = "asyncpg" },
-    { name = "commerce-backend-common" },
+    { name = "commerce-backend-common", extra = ["database"] },
     { name = "fastapi" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "uvicorn", extra = ["standard"] },
@@ -184,7 +195,7 @@ dependencies = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.15,<2" },
     { name = "asyncpg", specifier = ">=0.30,<1" },
-    { name = "commerce-backend-common", editable = "packages/backend-common" },
+    { name = "commerce-backend-common", extras = ["database"], editable = "packages/backend-common" },
     { name = "fastapi", specifier = ">=0.115,<1" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0,<3" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34,<1" },
@@ -197,7 +208,7 @@ source = { editable = "apps/identity-service" }
 dependencies = [
     { name = "alembic" },
     { name = "asyncpg" },
-    { name = "commerce-backend-common" },
+    { name = "commerce-backend-common", extra = ["database"] },
     { name = "fastapi" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "uvicorn", extra = ["standard"] },
@@ -207,7 +218,7 @@ dependencies = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.15,<2" },
     { name = "asyncpg", specifier = ">=0.30,<1" },
-    { name = "commerce-backend-common", editable = "packages/backend-common" },
+    { name = "commerce-backend-common", extras = ["database"], editable = "packages/backend-common" },
     { name = "fastapi", specifier = ">=0.115,<1" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0,<3" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34,<1" },
@@ -221,7 +232,7 @@ dependencies = [
     { name = "aio-pika" },
     { name = "alembic" },
     { name = "asyncpg" },
-    { name = "commerce-backend-common" },
+    { name = "commerce-backend-common", extra = ["database"] },
     { name = "fastapi" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "uvicorn", extra = ["standard"] },
@@ -232,7 +243,7 @@ requires-dist = [
     { name = "aio-pika", specifier = ">=9,<10" },
     { name = "alembic", specifier = ">=1.15,<2" },
     { name = "asyncpg", specifier = ">=0.30,<1" },
-    { name = "commerce-backend-common", editable = "packages/backend-common" },
+    { name = "commerce-backend-common", extras = ["database"], editable = "packages/backend-common" },
     { name = "fastapi", specifier = ">=0.115,<1" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0,<3" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34,<1" },
@@ -246,7 +257,7 @@ dependencies = [
     { name = "aio-pika" },
     { name = "alembic" },
     { name = "asyncpg" },
-    { name = "commerce-backend-common" },
+    { name = "commerce-backend-common", extra = ["database"] },
     { name = "fastapi" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "uvicorn", extra = ["standard"] },
@@ -257,7 +268,7 @@ requires-dist = [
     { name = "aio-pika", specifier = ">=9,<10" },
     { name = "alembic", specifier = ">=1.15,<2" },
     { name = "asyncpg", specifier = ">=0.30,<1" },
-    { name = "commerce-backend-common", editable = "packages/backend-common" },
+    { name = "commerce-backend-common", extras = ["database"], editable = "packages/backend-common" },
     { name = "fastapi", specifier = ">=0.115,<1" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0,<3" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34,<1" },
@@ -271,7 +282,7 @@ dependencies = [
     { name = "aio-pika" },
     { name = "alembic" },
     { name = "asyncpg" },
-    { name = "commerce-backend-common" },
+    { name = "commerce-backend-common", extra = ["database"] },
     { name = "fastapi" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "uvicorn", extra = ["standard"] },
@@ -282,7 +293,7 @@ requires-dist = [
     { name = "aio-pika", specifier = ">=9,<10" },
     { name = "alembic", specifier = ">=1.15,<2" },
     { name = "asyncpg", specifier = ">=0.30,<1" },
-    { name = "commerce-backend-common", editable = "packages/backend-common" },
+    { name = "commerce-backend-common", extras = ["database"], editable = "packages/backend-common" },
     { name = "fastapi", specifier = ">=0.115,<1" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0,<3" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34,<1" },

@@ -2,7 +2,7 @@
 
 ## 1. Trạng thái hiện tại
 
-Đã setup bước 1–2: workspace/tooling và 6 skeleton FastAPI có settings/lifespan/health/errors/logs, gateway diagnostic, env example, Dockerfile và test. Xem [bước 1](SETUP-STEP-1.md) về toolchain, [bước 2](SETUP-STEP-2.md) về lệnh chạy và kết quả kiểm tra. Chưa có DB/broker client, migration, nghiệp vụ, Next.js page/layout hoặc Compose. Dockerfile chưa build do daemon chưa chạy.
+Đã setup bước 1–3: toolchain, 6 skeleton FastAPI và nền tảng DB gồm async session/lifespan, Alembic riêng schema, bootstrap role/quyền và PostgreSQL test. Xem [bước 1](SETUP-STEP-1.md), [chạy backend](SETUP-STEP-2.md) và [cấu hình DB/migration](SETUP-STEP-3.md). Supabase dev thật chưa kết nối vì chưa có credential; không dùng test local để kết luận cloud sẵn sàng. Chưa có nghiệp vụ, worker RabbitMQ, Next.js page/layout hoặc Compose. Docker daemon đã chạy để kiểm thử PostgreSQL nhưng Dockerfile ứng dụng vẫn chưa build.
 
 ## 2. Trước khi bắt đầu code
 

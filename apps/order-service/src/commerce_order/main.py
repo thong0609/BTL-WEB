@@ -1,10 +1,13 @@
-"""FastAPI factory; no DB or broker connection is opened in setup step 2."""
+"""Service factory; DB resources are optional and bounded by lifespan."""
 
 from fastapi import FastAPI
 
 from commerce_backend_common.application import build_app
+from commerce_backend_common.database_lifespan import database_lifespan
+from commerce_order.db import SPEC
 from commerce_order.settings import Settings
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
-    return build_app(settings if settings is not None else Settings())
+    config = settings if settings is not None else Settings()
+    return build_app(config, database_lifespan(config, SPEC))

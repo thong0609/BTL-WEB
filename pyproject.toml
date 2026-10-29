@@ -45,6 +45,7 @@ python_version = "3.12"
 strict = true
 files = ["apps", "packages/backend-common"]
 plugins = ["pydantic.mypy"]
+exclude = ["/migrations/"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --strict-markers"
