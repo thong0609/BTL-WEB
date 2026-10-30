@@ -1,5 +1,6 @@
 """Technical PostgreSQL plumbing. No business models or cross-service sessions."""
 
+import os
 import ssl
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -66,12 +67,18 @@ class DatabaseSettings(ServiceSettings):
     db_ssl_ca_file: Path | None = None
 
 
-def postgres_url(secret: SecretStr, expected_role: str | None = None) -> URL:
+def postgres_url(
+    secret: SecretStr, expected_role: str | None = None, *, test_only: bool = False
+) -> URL:
     try:
         url = make_url(secret.get_secret_value())
         if url.drivername not in {"postgres", "postgresql", "postgresql+asyncpg"}:
             raise ValueError
         if not url.host or not url.database or not url.username or url.query:
+            raise ValueError
+        if (test_only or os.getenv("APP_ENV") == "test") and (
+            url.host not in {"127.0.0.1", "localhost", "::1"} or url.database != "commerce_test"
+        ):
             raise ValueError
         # This base supports direct/session poolers only, not transaction pooling.
         if url.port == 6543:
@@ -113,7 +120,9 @@ class Database:
             raise DatabaseConfigurationError("Configured schema does not belong to this service")
         if settings.database_url is None:
             raise DatabaseConfigurationError("Missing runtime database URL")
-        url = postgres_url(settings.database_url, spec.runtime)
+        url = postgres_url(
+            settings.database_url, spec.runtime, test_only=settings.app_env == "test"
+        )
         self.spec = spec
         self.engine = create_async_engine(
             url,

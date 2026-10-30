@@ -2,7 +2,7 @@
 
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from contextlib import AbstractAsyncContextManager, AsyncExitStack, asynccontextmanager
 
 import structlog
 from fastapi import APIRouter, FastAPI, Request
@@ -16,6 +16,17 @@ from commerce_backend_common.schemas import ApiModel
 from commerce_backend_common.settings import ServiceSettings
 
 type AppLifespan = Callable[[FastAPI], AbstractAsyncContextManager[None]]
+
+
+def combine_lifespans(*lifespans: AppLifespan) -> AppLifespan:
+    @asynccontextmanager
+    async def resources(app: FastAPI) -> AsyncIterator[None]:
+        async with AsyncExitStack() as stack:
+            for lifespan in lifespans:
+                await stack.enter_async_context(lifespan(app))
+            yield
+
+    return resources
 
 
 class HealthResponse(ApiModel):

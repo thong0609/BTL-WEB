@@ -3,7 +3,7 @@ name = "commerce-payment-service"
 version = "0.1.0"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-  "commerce-backend-common[database]",
+  "commerce-backend-common[database,messaging]",
   "fastapi>=0.115,<1",
   "uvicorn[standard]>=0.34,<1",
   "sqlalchemy[asyncio]>=2.0,<3",

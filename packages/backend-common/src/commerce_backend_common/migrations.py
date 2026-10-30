@@ -46,7 +46,9 @@ def run_migrations(settings: DatabaseSettings, spec: DatabaseSpec, metadata: Met
         raise DatabaseConfigurationError(
             "MIGRATION_DATABASE_URL is required; runtime URL is not used"
         )
-    url = postgres_url(settings.migration_database_url, spec.migrator)
+    url = postgres_url(
+        settings.migration_database_url, spec.migrator, test_only=settings.app_env == "test"
+    )
     options = migration_options(spec, metadata)
     if context.is_offline_mode():
         # Offline output has no URL/password. Schema/roles must already exist from bootstrap.

@@ -1,6 +1,6 @@
 # Website bán hàng cho một cửa hàng
 
-Bộ phân tích và thiết kế ban đầu cho nhóm 5 thành viên. Sản phẩm hỗ trợ mua hàng, quản trị sản phẩm, tồn kho, xử lý đơn, COD và thanh toán mô phỏng. **Đã setup bước 1–3: toolchain, skeleton FastAPI và nền tảng SQLAlchemy/Alembic đã kiểm thử với PostgreSQL riêng. Supabase dev thật chờ credential; chưa có nghiệp vụ/broker.** Xem [bước 1](docs/development/SETUP-STEP-1.md), [chạy service](docs/development/SETUP-STEP-2.md) và [database bước 3](docs/development/SETUP-STEP-3.md).
+Bộ phân tích và thiết kế ban đầu cho nhóm 5 thành viên. Sản phẩm hỗ trợ mua hàng, quản trị sản phẩm, tồn kho, xử lý đơn, COD và thanh toán mô phỏng. **Đã setup base bước 1–4:** toolchain, skeleton FastAPI, SQLAlchemy/Alembic và RabbitMQ transport/worker monitor. Chưa có handler nghiệp vụ/inbox/outbox hoặc frontend chạy được. Xem [bước 1](docs/development/SETUP-STEP-1.md), [chạy service](docs/development/SETUP-STEP-2.md), [DB bước 3](docs/development/SETUP-STEP-3.md) và [RabbitMQ bước 4](docs/development/SETUP-STEP-4.md).
 
 ## Đọc từ đâu?
 

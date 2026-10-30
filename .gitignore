@@ -29,6 +29,7 @@ build/
 logs/
 uploads/
 infra/supabase/certs/
+infra/rabbitmq/certs/
 coverage/
 test-results/
 playwright-report/

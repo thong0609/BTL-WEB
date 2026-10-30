@@ -11,6 +11,7 @@ dependencies = [
 
 [project.optional-dependencies]
 database = ["sqlalchemy[asyncio]>=2.0,<3", "asyncpg>=0.30,<1", "alembic>=1.15,<2"]
+messaging = ["aio-pika>=9,<10", "pamqp>=3,<4", "yarl>=1,<2"]
 
 [build-system]
 requires = ["hatchling>=1.27,<2"]

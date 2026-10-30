@@ -30,6 +30,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def bootstrap_target(target: str):
+    if os.getenv("APP_ENV") == "test" and target != "test":
+        raise ValueError("Dev bootstrap is forbidden in the test environment")
     name = "TEST_ADMIN_DATABASE_URL" if target == "test" else "BOOTSTRAP_DATABASE_URL"
     secret = SecretStr(os.environ[name])
     url = postgres_url(secret)

@@ -2,9 +2,11 @@
 
 ## 1. Trạng thái hiện tại
 
-Đã setup bước 1–3: toolchain, 6 skeleton FastAPI và nền tảng DB gồm async session/lifespan, Alembic riêng schema, bootstrap role/quyền và PostgreSQL test. Xem [bước 1](SETUP-STEP-1.md), [chạy backend](SETUP-STEP-2.md) và [cấu hình DB/migration](SETUP-STEP-3.md). Supabase dev thật chưa kết nối vì chưa có credential; không dùng test local để kết luận cloud sẵn sàng. Chưa có nghiệp vụ, worker RabbitMQ, Next.js page/layout hoặc Compose. Docker daemon đã chạy để kiểm thử PostgreSQL nhưng Dockerfile ứng dụng vẫn chưa build.
+Đã setup base bước 1–4: toolchain, 6 skeleton FastAPI, nền tảng DB và RabbitMQ transport/worker monitor. Xem [bước 1](SETUP-STEP-1.md), [chạy backend](SETUP-STEP-2.md), [DB/migration](SETUP-STEP-3.md), [RabbitMQ](SETUP-STEP-4.md). Chưa có handler nghiệp vụ/inbox/outbox, Next.js page/layout hoặc Compose. Shared dev được cấu hình riêng qua .env; test đã chặn đọc env file dev và kết nối ra host remote. Docker daemon đã dùng cho PostgreSQL/RabbitMQ test; Dockerfile ứng dụng vẫn chưa build.
 
 ## 2. Trước khi bắt đầu code
+
+Bổ sung base bước 4: [RabbitMQ transport và worker monitor](SETUP-STEP-4.md) đã được triển khai cho Inventory/Order/Payment. API không auto-consume; topology/smoke cần lệnh riêng. Worker hiện chỉ theo dõi kết nối, chưa xử lý nghiệp vụ. Test process dùng APP_ENV=test, bỏ đọc .env dev và chặn URL DB/broker remote; không dùng credential dev trong test.
 
 Supabase là **database dev dùng chung ngay khi cả nhóm phát triển**, theo làm rõ ngày 28/10/2026; đọc [thiết kế kết nối và phối hợp](../infrastructure/PHUONG-AN-SUPABASE.md). FastAPI có thể chạy trên laptop, DATABASE_URL trỏ Supabase dev theo role service mình; không bắt buộc mỗi người có DB local. Một project/database có 5 schema và role riêng. Test cần reset dùng DB riêng cùng tên schema. Worker có thể chạy trên laptop theo phân công, nhưng dùng broker dev chung và tránh nhiều bản code khác nhau tranh cùng queue/outbox. Production chưa tính tới.
 
