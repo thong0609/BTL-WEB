@@ -1,6 +1,6 @@
 # Plan setup base để duyệt trước khi triển khai
 
-Trạng thái: **ĐÃ TRIỂN KHAI BASE BƯỚC 1–4** theo các yêu cầu riêng của bạn. Bước 4 có RabbitMQ client/topology/smoke và worker monitor tách API; chưa có handler nghiệp vụ. Shared broker dev chưa được cấp; kiểm thử bằng broker Docker riêng. Dockerfile ứng dụng chưa build. Bước 5–7 chưa triển khai. Xem [bước 1](../docs/development/SETUP-STEP-1.md), [bước 2](../docs/development/SETUP-STEP-2.md), [bước 3](../docs/development/SETUP-STEP-3.md), [bước 4](../docs/development/SETUP-STEP-4.md).
+Trạng thái: **ĐÃ TRIỂN KHAI BASE BƯỚC 1–5** theo các yêu cầu riêng của bạn. Bước 4 có RabbitMQ client/topology/smoke và worker monitor tách API; chưa có handler nghiệp vụ. Shared broker dev chưa được cấp; kiểm thử bằng broker Docker riêng. Bước 5 thêm Next.js App Router/Tailwind, API client và trang kiểm tra kết nối. Kết quả build và Dockerfile ghi ở tài liệu từng bước. Bước 6–7 chưa triển khai. Xem [bước 1](../docs/development/SETUP-STEP-1.md), [bước 2](../docs/development/SETUP-STEP-2.md), [bước 3](../docs/development/SETUP-STEP-3.md), [bước 4](../docs/development/SETUP-STEP-4.md), [bước 5](../docs/development/SETUP-STEP-5.md).
 
 Tài liệu này dành cho bạn chốt phạm vi công việc mình sẽ thực hiện. Đây không phải kế hoạch phân công thành viên hoặc tài liệu onboarding. Sau khi bạn duyệt, mình triển khai các hạng mục được chọn và báo lại bằng kết quả chạy thực tế.
 
@@ -10,7 +10,7 @@ Repository có bộ khung frontend/backend thống nhất, công cụ và cấu 
 
 Bám các quyết định đã có:
 
-- Next.js + TypeScript cho frontend; FastAPI/Python cho gateway và 5 service. Hiện đã thực hiện base bước 1–4; cấu hình dev DB/broker thực tế nằm ngoài Git và được kiểm chứng riêng.
+- Next.js + TypeScript cho frontend; FastAPI/Python cho gateway và 5 service. Hiện đã thực hiện base bước 1–5; cấu hình dev DB/broker thực tế nằm ngoài Git và được kiểm chứng riêng.
 - Dev dùng PostgreSQL trên Supabase chung, 5 schema/role riêng; backend có thể chạy trên máy thành viên.
 - Database test riêng; production chưa thiết kế.
 - PostgreSQL/SQLAlchemy/Alembic, RabbitMQ/aio-pika là hướng triển khai hiện tại.

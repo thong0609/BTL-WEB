@@ -1,0 +1,14 @@
+@import "tailwindcss";
+/* Explicit source supports workspaces whose node_modules is a junction. */
+@source "../";
+
+:root { color-scheme: light; }
+body {
+  margin: 0;
+  background: #f4f6f8;
+  color: #172b3a;
+  font-family: Arial, Helvetica, sans-serif;
+}
+button { cursor: pointer; }
+button:disabled { cursor: wait; }
+button:focus-visible, a:focus-visible { outline: 3px solid #0284c7; outline-offset: 4px; }

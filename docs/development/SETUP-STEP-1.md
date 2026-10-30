@@ -2,6 +2,8 @@
 
 Bản ghi tại thời điểm hoàn tất bước 1. Skeleton backend đã được bổ sung sau đó; trạng thái mới nhất và cách chạy nằm tại [SETUP-STEP-2.md](SETUP-STEP-2.md).
 
+Cập nhật bước 5: frontend đã chạy được; `node_modules` trên máy setup đã chuyển về thư mục thật trong `apps/web` vì Next.js build lỗi với junction sang ổ C. Cách dùng junction tạm bên dưới chỉ là lịch sử. Hướng dẫn frontend hiện tại ở [bước 5](SETUP-STEP-5.md).
+
 ## Phạm vi
 
 Repo hiện có bộ khung package và công cụ; chưa có FastAPI app, HTTP route, Next.js page/layout, kết nối Supabase hoặc worker nghiệp vụ. Phần đó thực hiện ở các bước sau trong [plan](../../plans/SETUP-BASE.md).

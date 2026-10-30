@@ -2,7 +2,7 @@
 
 ## 1. Trạng thái hiện tại
 
-Đã setup base bước 1–4: toolchain, 6 skeleton FastAPI, nền tảng DB và RabbitMQ transport/worker monitor. Xem [bước 1](SETUP-STEP-1.md), [chạy backend](SETUP-STEP-2.md), [DB/migration](SETUP-STEP-3.md), [RabbitMQ](SETUP-STEP-4.md). Chưa có handler nghiệp vụ/inbox/outbox, Next.js page/layout hoặc Compose. Shared dev được cấu hình riêng qua .env; test đã chặn đọc env file dev và kết nối ra host remote. Docker daemon đã dùng cho PostgreSQL/RabbitMQ test; Dockerfile ứng dụng vẫn chưa build.
+Đã setup base bước 1–5: toolchain, 6 skeleton FastAPI, nền tảng DB, RabbitMQ transport/worker monitor và frontend Next.js. Xem [bước 1](SETUP-STEP-1.md), [chạy backend](SETUP-STEP-2.md), [DB/migration](SETUP-STEP-3.md), [RabbitMQ](SETUP-STEP-4.md), [frontend](SETUP-STEP-5.md). Frontend có App Router/Tailwind, API client và trang kiểm tra HTTP qua gateway. Chưa có handler nghiệp vụ/inbox/outbox, màn hình mua hàng hoặc Compose. Shared dev được cấu hình riêng qua .env; test đã chặn đọc env file dev và kết nối ra host remote. Kết quả Dockerfile được ghi theo từng bước setup.
 
 ## 2. Trước khi bắt đầu code
 
