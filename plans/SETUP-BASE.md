@@ -1,6 +1,6 @@
 # Plan setup base để duyệt trước khi triển khai
 
-Trạng thái: **ĐÃ TRIỂN KHAI BASE BƯỚC 1–5** theo các yêu cầu riêng của bạn. Bước 4 có RabbitMQ client/topology/smoke và worker monitor tách API; chưa có handler nghiệp vụ. Shared broker dev chưa được cấp; kiểm thử bằng broker Docker riêng. Bước 5 thêm Next.js App Router/Tailwind, API client và trang kiểm tra kết nối. Kết quả build và Dockerfile ghi ở tài liệu từng bước. Bước 6–7 chưa triển khai. Xem [bước 1](../docs/development/SETUP-STEP-1.md), [bước 2](../docs/development/SETUP-STEP-2.md), [bước 3](../docs/development/SETUP-STEP-3.md), [bước 4](../docs/development/SETUP-STEP-4.md), [bước 5](../docs/development/SETUP-STEP-5.md).
+Trạng thái: **ĐÃ TRIỂN KHAI BASE BƯỚC 1–6** theo các yêu cầu riêng của bạn. Bước 6 bổ sung lệnh dev, RabbitMQ local, container ứng dụng tùy chọn và Compose test/reset có kiểm tra target. Database dev vẫn là Supabase chung; code riêng dùng broker local từng máy, ghép service giữa máy dùng broker chung. Chưa có handler nghiệp vụ/inbox/outbox, chưa cấp broker chung; CI bước 7 chưa triển khai. Xem [bước 1](../docs/development/SETUP-STEP-1.md), [bước 2](../docs/development/SETUP-STEP-2.md), [bước 3](../docs/development/SETUP-STEP-3.md), [bước 4](../docs/development/SETUP-STEP-4.md), [bước 5](../docs/development/SETUP-STEP-5.md), [bước 6](../docs/development/SETUP-STEP-6.md).
 
 Tài liệu này dành cho bạn chốt phạm vi công việc mình sẽ thực hiện. Đây không phải kế hoạch phân công thành viên hoặc tài liệu onboarding. Sau khi bạn duyệt, mình triển khai các hạng mục được chọn và báo lại bằng kết quả chạy thực tế.
 
@@ -10,7 +10,7 @@ Repository có bộ khung frontend/backend thống nhất, công cụ và cấu 
 
 Bám các quyết định đã có:
 
-- Next.js + TypeScript cho frontend; FastAPI/Python cho gateway và 5 service. Hiện đã thực hiện base bước 1–5; cấu hình dev DB/broker thực tế nằm ngoài Git và được kiểm chứng riêng.
+- Next.js + TypeScript cho frontend; FastAPI/Python cho gateway và 5 service. Hiện đã thực hiện base bước 1–6; cấu hình dev DB/broker thực tế nằm ngoài Git và được kiểm chứng riêng.
 - Dev dùng PostgreSQL trên Supabase chung, 5 schema/role riêng; backend có thể chạy trên máy thành viên.
 - Database test riêng; production chưa thiết kế.
 - PostgreSQL/SQLAlchemy/Alembic, RabbitMQ/aio-pika là hướng triển khai hiện tại.
@@ -92,7 +92,7 @@ Tên module Python bên trong các ứng dụng phải khác nhau để chạy/t
 ### Bước 4 — Base RabbitMQ, tách worker khỏi API
 
 - Tạo wrapper kết nối aio-pika, publish có confirm/routing check, declare exchange/queue theo cấu hình và đóng kết nối đúng cách.
-- Cấu hình broker dev chung qua BROKER_URL; broker local dùng cho kiểm tra độc lập nếu cần.
+- Cấu hình BROKER_URL linh hoạt: code riêng dùng RabbitMQ local từng máy; khi ghép service giữa nhiều máy, dùng cùng broker/vhost. Code nền tảng và hợp đồng message dùng chung, dữ liệu Supabase vẫn dùng chung dù broker riêng.
 - Chuẩn bị chế độ chạy worker riêng, mặc định **không tự chạy consumer/outbox khi mở API trên mọi máy**. Việc này tránh các bản code local cùng lấy công việc dev.
 - Smoke test publish/consume dùng queue riêng có hậu tố ngẫu nhiên và cleanup; không consume queue nghiệp vụ hoặc tạo đơn/thanh toán giả trong DB dev.
 - Chưa viết inbox/outbox, Saga hoặc handler command nghiệp vụ trong đợt base. Ghi rõ nền tảng broker chưa đồng nghĩa có giao dịch phân tán hoàn chỉnh.
@@ -112,7 +112,7 @@ Tên module Python bên trong các ứng dụng phải khác nhau để chạy/t
 ### Bước 6 — Dev scripts, container và môi trường test
 
 - Script chạy/lint/test theo tên service, hỗ trợ PowerShell trên máy hiện tại; hướng dẫn workdir rõ ràng, không phụ thuộc cwd vô tình.
-- Dockerfile cho backend/frontend; compose.dev có broker local tùy chọn và ứng dụng khi cần. **Không tự đưa PostgreSQL local thành database dev mặc định**: dev vẫn trỏ Supabase.
+- Dockerfile cho backend/frontend; compose.dev mặc định chỉ bật RabbitMQ local, profile apps bật các ứng dụng khi cần. **Không tự đưa PostgreSQL local thành database dev mặc định**: dev vẫn trỏ Supabase.
 - compose.test có PostgreSQL và RabbitMQ test riêng. Reset test kiểm tra môi trường/đích kết nối đã allowlist; không chỉ tin APP_ENV trong khi URL vẫn trỏ dev.
 - Không đưa tất cả worker lên cùng Supabase một cách tự động khi chạy lệnh start mặc định.
 - Ghi các lệnh cài, chạy và smoke test đã thực thi vào hướng dẫn phát triển. Tài liệu chưa có endpoint/credential thì dùng placeholder rõ ràng.

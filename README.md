@@ -1,6 +1,8 @@
 # Website bán hàng cho một cửa hàng
 
-Bộ phân tích và thiết kế ban đầu cho nhóm 5 thành viên. Sản phẩm hỗ trợ mua hàng, quản trị sản phẩm, tồn kho, xử lý đơn, COD và thanh toán mô phỏng. **Đã setup base bước 1–5:** toolchain, skeleton FastAPI, SQLAlchemy/Alembic, RabbitMQ transport/worker monitor và Next.js có trang kiểm tra kết nối qua gateway. Chưa có handler nghiệp vụ/inbox/outbox hoặc màn hình mua hàng. Xem [bước 1](docs/development/SETUP-STEP-1.md), [chạy service](docs/development/SETUP-STEP-2.md), [DB bước 3](docs/development/SETUP-STEP-3.md), [RabbitMQ bước 4](docs/development/SETUP-STEP-4.md), [frontend bước 5](docs/development/SETUP-STEP-5.md).
+Bộ phân tích và thiết kế ban đầu cho nhóm 5 thành viên. Sản phẩm hỗ trợ mua hàng, quản trị sản phẩm, tồn kho, xử lý đơn, COD và thanh toán mô phỏng. **Đã setup base bước 1–6:** toolchain, skeleton FastAPI, SQLAlchemy/Alembic, RabbitMQ transport/worker monitor, Next.js, script dev và Compose. Chưa có handler nghiệp vụ/inbox/outbox hoặc màn hình mua hàng. Xem [bước 1](docs/development/SETUP-STEP-1.md), [chạy service](docs/development/SETUP-STEP-2.md), [DB bước 3](docs/development/SETUP-STEP-3.md), [RabbitMQ bước 4](docs/development/SETUP-STEP-4.md), [frontend bước 5](docs/development/SETUP-STEP-5.md), [chạy dev/test bước 6](docs/development/SETUP-STEP-6.md).
+
+Dev dùng **Supabase chung + RabbitMQ local từng máy**; khi ghép service giữa nhiều máy dùng broker chung. Bắt đầu với `scripts/dev.ps1 infra dev init` rồi `scripts/dev.ps1 infra dev up` để bật riêng broker; các service/worker chạy bằng lệnh riêng. Xem bước 6 để cài dependency, chuẩn bị `.env` và chạy từng phần.
 
 ## Đọc từ đâu?
 
@@ -52,6 +54,6 @@ Ví dụ hủy đơn: **UC-ORD-03 → UI-08 → POST /orders/{id}/cancel → Rel
 
 ## Quản lý thay đổi
 
-**Đã chốt và làm rõ 28/10/2026:** dev hằng ngày của nhóm dùng chung Supabase, database `postgres`, 5 schema/role riêng theo service. Backend có thể chạy trên laptop mỗi người và kết nối DB dev này để cùng thấy dữ liệu. Test cần reset dùng DB riêng; PostgreSQL local độc lập chỉ là tùy chọn. **Production chưa quyết định.** Xem [thiết kế Supabase](docs/infrastructure/PHUONG-AN-SUPABASE.md) về kết nối và phối hợp worker/broker. Chưa tạo/kiểm chứng tài nguyên thực tế.
+**Đã chốt và làm rõ 28/10/2026:** dev hằng ngày của nhóm dùng chung Supabase, database `postgres`, 5 schema/role riêng theo service. Backend có thể chạy trên laptop mỗi người và kết nối DB dev này để cùng thấy dữ liệu. Test cần reset dùng DB riêng; PostgreSQL local độc lập chỉ là tùy chọn. **Production chưa quyết định.** Xem [thiết kế Supabase](docs/infrastructure/PHUONG-AN-SUPABASE.md) về kết nối và phối hợp worker/broker. Cấu hình thật do nhóm quản lý ngoài Git; kết quả kiểm chứng được ghi theo từng bước setup.
 
 Quy tắc nghiệp vụ nằm ở đặc tả; trạng thái/quy trình nằm ở thiết kế luồng; cấu trúc HTTP nằm ở OpenAPI; cấu trúc message nằm ở MESSAGES; cấu trúc DB nằm ở mô tả hệ thống. Nếu phát hiện xung đột, tạo ghi chú và sửa các tài liệu liên quan trong cùng PR trước khi triển khai. Không tự chọn cách hiểu riêng ở từng service.

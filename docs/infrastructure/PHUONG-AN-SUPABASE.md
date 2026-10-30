@@ -54,7 +54,7 @@ Database role là lớp cô lập giữa service. RLS không tự thay thế ki�
 | DB_SCHEMA | Tên schema service được allowlist/config cố định |
 | DB_POOL_SIZE / DB_MAX_OVERFLOW | Giới hạn kết nối của từng process |
 | APP_ENV | dev hoặc test; dev có thể chạy code trên laptop nhưng dùng Supabase chung; tool reset chỉ được chạy với DB test đã xác minh |
-| BROKER_URL | Broker cùng môi trường với database và workflow |
+| BROKER_URL | Broker local khi code riêng; cùng broker/vhost khi ghép workflow giữa nhiều máy; test dùng broker riêng |
 
 Yêu cầu SSL theo hướng dẫn nhà cung cấp và cấu hình driver; giữ xác minh chứng chỉ phù hợp. Không copy tùy tiện tham số sslmode của driver đồng bộ sang asyncpg mà chưa kiểm chứng.
 
@@ -76,12 +76,13 @@ Không sửa cấu trúc tay trong Dashboard rồi bỏ qua migration. Emergency
 
 | Môi trường | DB | Broker / worker | Mục đích |
 | --- | --- | --- | --- |
-| Dev hằng ngày của nhóm | Supabase dev chung, database postgres/5 schema | Broker dev chung; service có thể chạy trên máy thành viên hoặc host dev | Cả nhóm đọc/ghi cùng dữ liệu khi làm việc |
+| Dev hằng ngày của nhóm | Supabase dev chung, database postgres/5 schema | RabbitMQ local từng máy; chạy đủ service/worker cần cho luồng local | Cùng dữ liệu DB, message tách riêng theo broker |
+| Ghép service giữa nhiều máy | Supabase dev chung | Cùng broker/vhost, phân công worker và địa chỉ HTTP | Kiểm tra luồng xuyên các máy/service |
 | CI/test | DB tạm hoặc DB test riêng, không trỏ Supabase dev | Broker test riêng | Reset, fault test và concurrency |
 | Local độc lập tùy chọn | PostgreSQL local | Broker local nếu cần | Offline/thử nghiệm riêng; không phải yêu cầu dev mặc định |
 | Production | Chưa quyết định | Chưa quyết định | Thiết kế khi nhóm có nhu cầu triển khai thực tế |
 
-**Cách phối hợp dev đơn giản:** người phụ trách Order chạy Order và worker Order; người phụ trách Inventory chạy Inventory và worker Inventory; Payment tương tự. Các phần dùng Supabase dev và broker dev chung. Frontend/gateway trỏ tới các endpoint dev đã thống nhất. Có thể đưa bộ service lên host dev chung khi thuận tiện, nhưng không bắt buộc phải có host đó mới được dùng chung dữ liệu.
+**Cách phối hợp đã chốt:** code nền tảng và hợp đồng message dùng chung; mỗi người viết handler của service mình, chạy RabbitMQ local để code riêng. Ví dụ Order trên máy A gửi vào broker A thì Inventory phải kết nối broker A để nhận; Inventory trên broker B không nhận message đó. Khi ghép service giữa nhiều máy, chuyển các phần liên quan sang cùng broker/vhost và thống nhất endpoint HTTP. Không cần máy thứ sáu để dùng chung DB. Script/Compose tại [bước 6](../development/SETUP-STEP-6.md) hỗ trợ broker local và chế độ dùng broker đã cấu hình.
 
 Nếu một service được nhiều người cùng sửa, thống nhất bộ consumer/outbox worker nào đang hoạt động. Các bản local thử API/đọc dữ liệu có thể tắt worker để không tranh xử lý công việc của nhau. Không chạy nhiều bản consumer khác version thiếu phối hợp; lease chống lặp không bảo đảm chọn đúng phiên bản code. Dữ liệu dev chung thay đổi bởi mọi người, nên các ca kiểm thử cần kết quả cố định phải dùng test DB riêng.
 

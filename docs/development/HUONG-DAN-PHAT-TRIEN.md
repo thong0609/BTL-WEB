@@ -2,13 +2,13 @@
 
 ## 1. Trạng thái hiện tại
 
-Đã setup base bước 1–5: toolchain, 6 skeleton FastAPI, nền tảng DB, RabbitMQ transport/worker monitor và frontend Next.js. Xem [bước 1](SETUP-STEP-1.md), [chạy backend](SETUP-STEP-2.md), [DB/migration](SETUP-STEP-3.md), [RabbitMQ](SETUP-STEP-4.md), [frontend](SETUP-STEP-5.md). Frontend có App Router/Tailwind, API client và trang kiểm tra HTTP qua gateway. Chưa có handler nghiệp vụ/inbox/outbox, màn hình mua hàng hoặc Compose. Shared dev được cấu hình riêng qua .env; test đã chặn đọc env file dev và kết nối ra host remote. Kết quả Dockerfile được ghi theo từng bước setup.
+Đã setup base bước 1–6: toolchain, 6 skeleton FastAPI, nền tảng DB, RabbitMQ transport/worker monitor, frontend Next.js, script dev và Compose. Xem [bước 1](SETUP-STEP-1.md), [chạy backend](SETUP-STEP-2.md), [DB/migration](SETUP-STEP-3.md), [RabbitMQ](SETUP-STEP-4.md), [frontend](SETUP-STEP-5.md), [lệnh dev/container/test](SETUP-STEP-6.md). Chưa có handler nghiệp vụ/inbox/outbox, màn hình mua hàng hoặc CI bước 7. Test không đọc env backend dev; reset Compose chỉ được tác động project test đã xác minh.
 
 ## 2. Trước khi bắt đầu code
 
 Bổ sung base bước 4: [RabbitMQ transport và worker monitor](SETUP-STEP-4.md) đã được triển khai cho Inventory/Order/Payment. API không auto-consume; topology/smoke cần lệnh riêng. Worker hiện chỉ theo dõi kết nối, chưa xử lý nghiệp vụ. Test process dùng APP_ENV=test, bỏ đọc .env dev và chặn URL DB/broker remote; không dùng credential dev trong test.
 
-Supabase là **database dev dùng chung ngay khi cả nhóm phát triển**, theo làm rõ ngày 28/10/2026; đọc [thiết kế kết nối và phối hợp](../infrastructure/PHUONG-AN-SUPABASE.md). FastAPI có thể chạy trên laptop, DATABASE_URL trỏ Supabase dev theo role service mình; không bắt buộc mỗi người có DB local. Một project/database có 5 schema và role riêng. Test cần reset dùng DB riêng cùng tên schema. Worker có thể chạy trên laptop theo phân công, nhưng dùng broker dev chung và tránh nhiều bản code khác nhau tranh cùng queue/outbox. Production chưa tính tới.
+Supabase là **database dev dùng chung ngay khi cả nhóm phát triển**, theo làm rõ ngày 28/10/2026; đọc [thiết kế kết nối và phối hợp](../infrastructure/PHUONG-AN-SUPABASE.md). FastAPI trên laptop dùng DATABASE_URL theo role service mình. Code riêng dùng RabbitMQ local từng máy; message không sang broker máy khác, nhưng dữ liệu Supabase vẫn thay đổi chung. Muốn thử hết luồng trên một máy cần đủ service/worker và handler. Khi ghép service giữa nhiều máy, dùng cùng broker/vhost và phân công worker. Test/reset dùng DB/broker riêng. Không tự bật worker/job quét dữ liệu chung trên mọi máy; production chưa tính tới.
 
 Đọc [README](../../README.md), use case và contract của phần mình. Điền tên chủ trì/reviewer trong kế hoạch, review quyết định còn mở và khóa phiên bản Python/backend dependencies, Node/frontend packages, database và broker. Dựng khung repository theo file hệ thống; mỗi service có env example, schema, migration, healthcheck, Dockerfile và test.
 

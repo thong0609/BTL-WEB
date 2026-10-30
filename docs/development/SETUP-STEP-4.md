@@ -1,5 +1,7 @@
 # Setup bước 4 — RabbitMQ transport và worker base
 
+Cập nhật bước 6: code riêng dùng RabbitMQ local từng máy và Supabase chung; ghép service giữa nhiều máy dùng cùng broker/vhost. Bộ khung bước 4 đã hỗ trợ cả hai qua BROKER_URL. Script/Compose và cách chạy hiện tại ở [bước 6](SETUP-STEP-6.md); mô tả kiểm chứng bên dưới là bản ghi tại bước 4.
+
 ## 1. Phạm vi
 
 Đã bổ sung client aio-pika, envelope kỹ thuật, topology tường minh, smoke test và entrypoint worker riêng cho Inventory, Order, Payment. API có thể kiểm tra broker qua readiness nhưng **không tự khai báo topology, không consume message và không khởi động worker**.

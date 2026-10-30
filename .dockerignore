@@ -12,3 +12,7 @@
 .git
 docs
 plans
+infra/.local
+infra/supabase/certs
+infra/rabbitmq/certs
+**/*.crt

@@ -1,0 +1,131 @@
+# Use scripts/dev.ps1 infra dev init/up. No PostgreSQL dev container.
+x-labels: &labels
+  io.commerce.environment: dev
+  io.commerce.workspace: ${WORKSPACE_ID:?Run the infra init script}
+
+x-backend: &backend
+  profiles: [apps]
+  init: true
+  labels: *labels
+  volumes:
+    - ./.local/certs:/run/commerce-certs:ro
+  healthcheck:
+    test: [CMD, /opt/venv/bin/python, -c, "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ['HTTP_PORT']+'/health/live',timeout=3)"]
+    interval: 5s
+    timeout: 5s
+    start_period: 15s
+    retries: 12
+
+services:
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    hostname: rabbitmq-dev
+    labels: *labels
+    environment:
+      RABBITMQ_DEFAULT_USER: commerce_dev
+      RABBITMQ_DEFAULT_PASS: ${LOCAL_BROKER_PASSWORD:?Run the infra init script}
+      RABBITMQ_DEFAULT_VHOST: commerce_dev
+    ports:
+      - 127.0.0.1:${LOCAL_BROKER_PORT:-5672}:5672
+      - 127.0.0.1:${LOCAL_MANAGEMENT_PORT:-15672}:15672
+    volumes:
+      - rabbitmq_dev:/var/lib/rabbitmq
+    healthcheck:
+      test: [CMD, rabbitmq-diagnostics, -q, ping]
+      interval: 5s
+      timeout: 5s
+      start_period: 15s
+      retries: 18
+
+  api-gateway:
+    <<: *backend
+    build:
+      context: ..
+      dockerfile: apps/api-gateway/Dockerfile
+    env_file:
+      - {path: ./.local/apps/api-gateway.env, required: false, format: raw}
+    environment:
+      HTTP_HOST: 0.0.0.0
+      HTTP_PORT: 3000
+      CATALOG_BASE_URL: http://catalog-service:3002
+    ports: [127.0.0.1:3000:3000]
+    depends_on:
+      catalog-service: {condition: service_healthy}
+
+  identity-service:
+    <<: *backend
+    build:
+      context: ..
+      dockerfile: apps/identity-service/Dockerfile
+    env_file:
+      - {path: ./.local/apps/identity-service.env, required: false, format: raw}
+    environment: {HTTP_HOST: 0.0.0.0, HTTP_PORT: 3001}
+    ports: [127.0.0.1:3001:3001]
+
+  catalog-service:
+    <<: *backend
+    build:
+      context: ..
+      dockerfile: apps/catalog-service/Dockerfile
+    env_file:
+      - {path: ./.local/apps/catalog-service.env, required: false, format: raw}
+    environment: {HTTP_HOST: 0.0.0.0, HTTP_PORT: 3002}
+    ports: [127.0.0.1:3002:3002]
+
+  inventory-service:
+    <<: *backend
+    build:
+      context: ..
+      dockerfile: apps/inventory-service/Dockerfile
+    env_file:
+      - {path: ./.local/apps/inventory-service.env, required: false, format: raw}
+    environment: {HTTP_HOST: 0.0.0.0, HTTP_PORT: 3003}
+    ports: [127.0.0.1:3003:3003]
+    depends_on:
+      rabbitmq: {condition: service_healthy}
+
+  order-service:
+    <<: *backend
+    build:
+      context: ..
+      dockerfile: apps/order-service/Dockerfile
+    env_file:
+      - {path: ./.local/apps/order-service.env, required: false, format: raw}
+    environment: {HTTP_HOST: 0.0.0.0, HTTP_PORT: 3004}
+    ports: [127.0.0.1:3004:3004]
+    depends_on:
+      rabbitmq: {condition: service_healthy}
+
+  payment-service:
+    <<: *backend
+    build:
+      context: ..
+      dockerfile: apps/payment-service/Dockerfile
+    env_file:
+      - {path: ./.local/apps/payment-service.env, required: false, format: raw}
+    environment: {HTTP_HOST: 0.0.0.0, HTTP_PORT: 3005}
+    ports: [127.0.0.1:3005:3005]
+    depends_on:
+      rabbitmq: {condition: service_healthy}
+
+  web:
+    profiles: [apps]
+    init: true
+    labels: *labels
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args: {GATEWAY_URL: "http://api-gateway:3000"}
+    ports: [127.0.0.1:3100:3100]
+    depends_on:
+      api-gateway: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3100').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      start_period: 15s
+      retries: 12
+
+volumes:
+  rabbitmq_dev:
+    labels: *labels
