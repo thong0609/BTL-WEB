@@ -1,8 +1,10 @@
 # Hướng dẫn phát triển và phối hợp
 
+Để cài và chạy từ đầu hoặc khởi động hằng ngày, đọc [Hướng dẫn chạy dự án](HUONG-DAN-CHAY-DU-AN.md). Trang đó hướng dẫn env, trách nhiệm migration, start/stop và xử lý lỗi; tài liệu này tập trung vào quy ước làm việc của nhóm.
+
 ## 1. Trạng thái hiện tại
 
-Đã setup base bước 1–6: toolchain, 6 skeleton FastAPI, nền tảng DB, RabbitMQ transport/worker monitor, frontend Next.js, script dev và Compose. Xem [bước 1](SETUP-STEP-1.md), [chạy backend](SETUP-STEP-2.md), [DB/migration](SETUP-STEP-3.md), [RabbitMQ](SETUP-STEP-4.md), [frontend](SETUP-STEP-5.md), [lệnh dev/container/test](SETUP-STEP-6.md). Chưa có handler nghiệp vụ/inbox/outbox, màn hình mua hàng hoặc CI bước 7. Test không đọc env backend dev; reset Compose chỉ được tác động project test đã xác minh.
+Đã triển khai base bước 1–7: toolchain, 6 skeleton FastAPI, nền tảng DB, RabbitMQ transport/worker monitor, frontend Next.js, script dev, Compose và workflow GitHub Actions. Xem [bước 1](SETUP-STEP-1.md), [chạy backend](SETUP-STEP-2.md), [DB/migration](SETUP-STEP-3.md), [RabbitMQ](SETUP-STEP-4.md), [frontend](SETUP-STEP-5.md), [lệnh dev/container/test](SETUP-STEP-6.md), [CI/bàn giao](SETUP-STEP-7.md). Workflow mới chưa chạy trên GitHub; chưa có handler nghiệp vụ/inbox/outbox hoặc màn hình mua hàng. Test không đọc env backend dev; reset Compose chỉ tác động project test đã xác minh. Xem bước 7 để phân biệt kết quả local, CI và các kết nối cloud còn cần kiểm chứng.
 
 ## 2. Trước khi bắt đầu code
 

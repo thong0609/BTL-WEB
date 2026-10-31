@@ -1,8 +1,10 @@
 # Website bán hàng cho một cửa hàng
 
-Bộ phân tích và thiết kế ban đầu cho nhóm 5 thành viên. Sản phẩm hỗ trợ mua hàng, quản trị sản phẩm, tồn kho, xử lý đơn, COD và thanh toán mô phỏng. **Đã setup base bước 1–6:** toolchain, skeleton FastAPI, SQLAlchemy/Alembic, RabbitMQ transport/worker monitor, Next.js, script dev và Compose. Chưa có handler nghiệp vụ/inbox/outbox hoặc màn hình mua hàng. Xem [bước 1](docs/development/SETUP-STEP-1.md), [chạy service](docs/development/SETUP-STEP-2.md), [DB bước 3](docs/development/SETUP-STEP-3.md), [RabbitMQ bước 4](docs/development/SETUP-STEP-4.md), [frontend bước 5](docs/development/SETUP-STEP-5.md), [chạy dev/test bước 6](docs/development/SETUP-STEP-6.md).
+Bộ phân tích và thiết kế ban đầu cho nhóm 5 thành viên. Sản phẩm hỗ trợ mua hàng, quản trị sản phẩm, tồn kho, xử lý đơn, COD và thanh toán mô phỏng. **Đã triển khai base bước 1–7:** toolchain, skeleton FastAPI, SQLAlchemy/Alembic, RabbitMQ transport/worker monitor, Next.js, script dev, Compose và cấu hình GitHub Actions. Workflow mới đang chờ push/chạy thực tế trên GitHub; chưa có handler nghiệp vụ/inbox/outbox hoặc màn hình mua hàng. Xem [bước 1](docs/development/SETUP-STEP-1.md), [chạy service](docs/development/SETUP-STEP-2.md), [DB bước 3](docs/development/SETUP-STEP-3.md), [RabbitMQ bước 4](docs/development/SETUP-STEP-4.md), [frontend bước 5](docs/development/SETUP-STEP-5.md), [chạy dev/test bước 6](docs/development/SETUP-STEP-6.md), [CI và bàn giao bước 7](docs/development/SETUP-STEP-7.md).
 
 Dev dùng **Supabase chung + RabbitMQ local từng máy**; khi ghép service giữa nhiều máy dùng broker chung. Bắt đầu với `scripts/dev.ps1 infra dev init` rồi `scripts/dev.ps1 infra dev up` để bật riêng broker; các service/worker chạy bằng lệnh riêng. Xem bước 6 để cài dependency, chuẩn bị `.env` và chạy từng phần.
+
+**Thành viên mới / chạy hằng ngày:** đọc [Hướng dẫn chạy dự án](docs/development/HUONG-DAN-CHAY-DU-AN.md). Tài liệu đi từ cài dependency, tạo env và xác định có cần migration, đến start/stop từng service, chạy lại sau khi pull code và test riêng.
 
 ## Đọc từ đâu?
 

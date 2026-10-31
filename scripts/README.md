@@ -7,3 +7,5 @@ Use `dev.ps1` on PowerShell or `uv run --locked --all-packages python scripts/de
 `broker.py` supports explicit check, topology --apply and smoke --apply for Inventory/Order/Payment. See [step 4](../docs/development/SETUP-STEP-4.md). It neither starts business consumers nor reads/writes PostgreSQL.
 
 `smoke_web.py` starts isolated loopback Catalog/gateway/Next.js processes to verify the HTTP chain, rewrite headers/cookies and upstream outages. Run with `uv run --locked --all-packages python scripts/smoke_web.py` after installing frontend dependencies. It disables DB/broker, ignores backend dev env files and cleans up its own processes. See [step 5](../docs/development/SETUP-STEP-5.md).
+
+`check_repository.py` checks tracked/unignored file paths, empty active credential fields in env templates and local Markdown links/fences. It rejects accidental local env/certificate/dependency files before reading them and reports filenames/line numbers only. Run `uv run --locked --all-packages python scripts/check_repository.py`; the backend CI job also runs it. See [step 7](../docs/development/SETUP-STEP-7.md) for CI and handoff status.

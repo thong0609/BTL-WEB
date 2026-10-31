@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  APP_ENV: test
+  DATABASE_ENABLED: "false"
+  BROKER_ENABLED: "false"
+  NEXT_TELEMETRY_DISABLED: "1"
+  GATEWAY_URL: http://127.0.0.1:3000
+
+jobs:
+  backend:
+    name: Backend checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: "0.12.19"
+          python-version: "3.12.8"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install locked backend dependencies
+        run: uv sync --locked --all-packages
+      - name: Check repository handoff files
+        run: uv run --locked --all-packages python scripts/check_repository.py
+      - name: Lint and formatting
+        run: uv run --locked --all-packages python scripts/dev.py lint backend
+      - name: Typecheck
+        run: uv run --locked --all-packages python scripts/dev.py typecheck backend
+      - name: Check Docker availability
+        run: docker info --format '{{.ServerVersion}}'
+      - name: Test with disposable PostgreSQL and RabbitMQ
+        run: uv run --locked --all-packages python scripts/dev.py test backend --integration
+
+  frontend:
+    name: Frontend checks and HTTP smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install locked frontend dependencies
+        run: npm --prefix apps/web ci
+      - name: Lint
+        run: npm --prefix apps/web run lint
+      - name: Typecheck
+        run: npm --prefix apps/web run typecheck
+      - name: Test API client
+        run: npm --prefix apps/web test
+      - name: Build
+        run: npm --prefix apps/web run build
+      - name: Set up uv and Python for HTTP smoke
+        uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: "0.12.19"
+          python-version: "3.12.8"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install locked backend dependencies
+        run: uv sync --locked --all-packages
+      - name: Smoke frontend to gateway to Catalog
+        run: uv run --locked --all-packages python scripts/dev.py smoke-web

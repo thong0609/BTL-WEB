@@ -1,6 +1,6 @@
 # Plan setup base để duyệt trước khi triển khai
 
-Trạng thái: **ĐÃ TRIỂN KHAI BASE BƯỚC 1–6** theo các yêu cầu riêng của bạn. Bước 6 bổ sung lệnh dev, RabbitMQ local, container ứng dụng tùy chọn và Compose test/reset có kiểm tra target. Database dev vẫn là Supabase chung; code riêng dùng broker local từng máy, ghép service giữa máy dùng broker chung. Chưa có handler nghiệp vụ/inbox/outbox, chưa cấp broker chung; CI bước 7 chưa triển khai. Xem [bước 1](../docs/development/SETUP-STEP-1.md), [bước 2](../docs/development/SETUP-STEP-2.md), [bước 3](../docs/development/SETUP-STEP-3.md), [bước 4](../docs/development/SETUP-STEP-4.md), [bước 5](../docs/development/SETUP-STEP-5.md), [bước 6](../docs/development/SETUP-STEP-6.md).
+Trạng thái: **ĐÃ TRIỂN KHAI CODE/CẤU HÌNH BASE BƯỚC 1–7; CHỜ CHẠY CI TRÊN GITHUB.** Bước 7 có workflow lint/typecheck/test/build/smoke và kiểm tra file bàn giao. Workflow mới chưa push/chạy thực tế; kết quả local và phần cloud chưa kiểm chứng được ghi riêng. Database dev vẫn là Supabase chung, code riêng dùng broker local; chưa có handler nghiệp vụ/inbox/outbox hoặc broker chung giữa nhiều máy. Xem [bước 1](../docs/development/SETUP-STEP-1.md), [bước 2](../docs/development/SETUP-STEP-2.md), [bước 3](../docs/development/SETUP-STEP-3.md), [bước 4](../docs/development/SETUP-STEP-4.md), [bước 5](../docs/development/SETUP-STEP-5.md), [bước 6](../docs/development/SETUP-STEP-6.md), [CI/bàn giao bước 7](../docs/development/SETUP-STEP-7.md).
 
 Tài liệu này dành cho bạn chốt phạm vi công việc mình sẽ thực hiện. Đây không phải kế hoạch phân công thành viên hoặc tài liệu onboarding. Sau khi bạn duyệt, mình triển khai các hạng mục được chọn và báo lại bằng kết quả chạy thực tế.
 
@@ -10,7 +10,7 @@ Repository có bộ khung frontend/backend thống nhất, công cụ và cấu 
 
 Bám các quyết định đã có:
 
-- Next.js + TypeScript cho frontend; FastAPI/Python cho gateway và 5 service. Hiện đã thực hiện base bước 1–6; cấu hình dev DB/broker thực tế nằm ngoài Git và được kiểm chứng riêng.
+- Next.js + TypeScript cho frontend; FastAPI/Python cho gateway và 5 service. Hiện đã triển khai code/cấu hình base bước 1–7; workflow GitHub mới chưa chạy, cấu hình dev DB/broker thật nằm ngoài Git và được kiểm chứng riêng.
 - Dev dùng PostgreSQL trên Supabase chung, 5 schema/role riêng; backend có thể chạy trên máy thành viên.
 - Database test riêng; production chưa thiết kế.
 - PostgreSQL/SQLAlchemy/Alembic, RabbitMQ/aio-pika là hướng triển khai hiện tại.
@@ -143,14 +143,16 @@ Thiếu thông tin của một hạng mục không ngăn viết skeleton hoặc 
 ## 5. Điều kiện coi đợt setup base hoàn tất
 
 - [ ] Clone repo và cài dependency bằng lockfile được.
-- [ ] Chạy riêng gateway và 5 service; healthcheck đúng, không cần code nghiệp vụ.
-- [ ] Frontend gọi qua gateway tới health service được.
-- [ ] Bộ lỗi/log/settings có cách dùng chung, không phải mỗi service tự đặt format.
-- [ ] 5 service có session/migration riêng, scope schema và quyền đã test trên DB test.
-- [ ] RabbitMQ smoke test độc lập pass; worker không tự tranh công việc dev khi chạy API.
-- [ ] CI config và kiểm tra local phù hợp pass; trạng thái GitHub CI được ghi theo thực tế.
-- [ ] Hướng dẫn chạy/env example đã được thử, không chứa secret.
+- [x] Chạy riêng gateway và 5 service; healthcheck đúng, không cần code nghiệp vụ.
+- [x] Frontend gọi qua gateway tới health service được.
+- [x] Bộ lỗi/log/settings có cách dùng chung, không phải mỗi service tự đặt format.
+- [x] 5 service có session/migration riêng, scope schema và quyền đã test trên DB test.
+- [x] RabbitMQ smoke test độc lập pass; worker không tự tranh công việc dev khi chạy API.
+- [ ] CI config/local đã kiểm tra; còn cần push/chạy GitHub CI cho đúng commit và ghi URL run.
+- [x] Hướng dẫn chạy/env example đã được thử, không chứa secret.
 - [ ] Supabase/broker dev đã được kiểm chứng nếu thông tin truy cập đã có; nếu thiếu, bàn giao base ở mức local/test-ready và liệt kê chính xác phần cloud pending, chưa gọi là dev chung hoàn tất.
+
+Checklist giữ mở phần clone sạch/CI trên GitHub và kiểm chứng cloud toàn bộ. Lockfile install/build local đã có bằng chứng ở các bước setup; trạng thái chi tiết và giới hạn bàn giao ở bước 7. Không coi bộ khung local/test là đã hoàn tất tích hợp cloud hoặc MVP.
 
 ## 6. Phần sẽ làm sau base
 
