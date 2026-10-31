@@ -29,6 +29,7 @@ dev = [
   "pytest>=8,<10",
   "httpx>=0.28,<1",
   "anyio>=4,<5",
+  "certifi>=2024.2.2",
 ]
 
 [tool.ruff]

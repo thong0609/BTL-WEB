@@ -1,20 +1,30 @@
 import ssl
 
+import certifi
 import pytest
 
 from commerce_backend_common.database import DatabaseConfigurationError, ssl_context
 
 
-def test_custom_ca_keeps_certificate_and_hostname_verification(tmp_path):
-    roots = ssl.create_default_context().get_ca_certs(binary_form=True)
-    assert roots, "This test requires at least one installed system CA"
+@pytest.mark.parametrize("empty_system_trust", [False, True])
+def test_custom_ca_keeps_certificate_and_hostname_verification(
+    tmp_path, monkeypatch, empty_system_trust
+):
+    # Source the public test CA from the locked bundle, not the machine's trust store.
+    bundle = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    bundle.load_verify_locations(cafile=certifi.where())
+    root = bundle.get_ca_certs(binary_form=True)[0]
+    if empty_system_trust:
+        empty_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        assert empty_context.get_ca_certs(binary_form=True) == []
+        monkeypatch.setattr(ssl, "create_default_context", lambda: empty_context)
     ca_file = tmp_path / "trusted-ca.crt"
-    ca_file.write_text(ssl.DER_cert_to_PEM_cert(roots[0]), encoding="ascii")
+    ca_file.write_text(ssl.DER_cert_to_PEM_cert(root), encoding="ascii")
     context = ssl_context("verify-full", "database.example", ca_file)
     assert isinstance(context, ssl.SSLContext)
     assert context.verify_mode == ssl.CERT_REQUIRED
     assert context.check_hostname is True
-    assert roots[0] in context.get_ca_certs(binary_form=True)
+    assert root in context.get_ca_certs(binary_form=True)
 
 
 @pytest.mark.parametrize("exists", [True, False])
