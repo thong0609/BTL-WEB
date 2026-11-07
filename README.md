@@ -4,6 +4,11 @@ Bộ phân tích và thiết kế ban đầu cho nhóm 5 thành viên. Sản ph�
 
 Dev dùng **Supabase chung + RabbitMQ local từng máy**; khi ghép service giữa nhiều máy dùng broker chung. Bắt đầu với `scripts/dev.ps1 infra dev init` rồi `scripts/dev.ps1 infra dev up` để bật riêng broker; các service/worker chạy bằng lệnh riêng. Xem bước 6 để cài dependency, chuẩn bị `.env` và chạy từng phần.
 
+Inventory hiện đã có model, migration và bốn API quản trị INV-01: khởi tạo, danh
+sách tồn, điều chỉnh, lịch sử. Xem [hướng dẫn INV-01](docs/development/INV-01.md).
+Identity/Catalog còn cần triển khai endpoint phụ thuộc để ghép luồng thật; test
+Inventory dùng PostgreSQL riêng và HTTP fixture cho hai service này.
+
 **Thành viên mới / chạy hằng ngày:** đọc [Hướng dẫn chạy dự án](docs/development/HUONG-DAN-CHAY-DU-AN.md). Tài liệu đi từ cài dependency, tạo env và xác định có cần migration, đến start/stop từng service, chạy lại sau khi pull code và test riêng.
 
 ## Đọc từ đâu?

@@ -25,6 +25,15 @@ Tên/ngành hàng; thời hạn và giờ mỗi người; phí ship; quyền ADM
 
 ## Mẫu quyết định mới
 
+**DEC-14 — Tích hợp INV-01 (07/11/2026, PROPOSED cho review liên service):**
+Inventory xác minh token qua Identity `GET /api/v1/users/me` và kiểm tra ADMIN/ACTIVE,
+không tin header danh tính do client truyền. Catalog lookup dùng service credential
+riêng theo [contract nội bộ](../contracts/catalog-internal.openapi.yaml).
+Thêm operation type INITIALIZE để đáp ứng Idempotency-Key của API khởi tạo, giữ
+7 bảng hiện tại và thêm revision thay CHECK thay vì sửa migration cũ. Chủ Identity,
+Catalog và Order cần review phần giao tiếp liên quan; chưa xác nhận tích hợp thật.
+Xem [triển khai và kiểm thử INV-01](../development/INV-01.md).
+
 ```text
 DEC-xx — Tên
 Ngày / người đề xuất / người duyệt:

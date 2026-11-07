@@ -99,7 +99,7 @@ class InventoryOperation(CreatedAtMixin, Base):
     __tablename__ = "inventory_operations"
     __table_args__ = (
         CheckConstraint(
-            "operation_type IN ('RESERVE', 'RELEASE', 'COMMIT', 'ADJUST')",
+            "operation_type IN ('RESERVE', 'RELEASE', 'COMMIT', 'ADJUST', 'INITIALIZE')",
             name="operation_type_valid",
         ),
         CheckConstraint("result_status IN ('SUCCEEDED', 'REJECTED')", name="result_status_valid"),

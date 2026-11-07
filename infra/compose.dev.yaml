@@ -48,6 +48,7 @@ services:
       HTTP_HOST: 0.0.0.0
       HTTP_PORT: 3000
       CATALOG_BASE_URL: http://catalog-service:3002
+      INVENTORY_BASE_URL: http://inventory-service:3003
     ports: [127.0.0.1:3000:3000]
     depends_on:
       catalog-service: {condition: service_healthy}
@@ -79,7 +80,11 @@ services:
       dockerfile: apps/inventory-service/Dockerfile
     env_file:
       - {path: ./.local/apps/inventory-service.env, required: false, format: raw}
-    environment: {HTTP_HOST: 0.0.0.0, HTTP_PORT: 3003}
+    environment:
+      HTTP_HOST: 0.0.0.0
+      HTTP_PORT: 3003
+      IDENTITY_BASE_URL: http://identity-service:3001
+      CATALOG_BASE_URL: http://catalog-service:3002
     ports: [127.0.0.1:3003:3003]
     depends_on:
       rabbitmq: {condition: service_healthy}

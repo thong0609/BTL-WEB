@@ -318,7 +318,7 @@ Chống lặp theo thao tác nghiệp vụ, kể cả yêu cầu dùng messageId
 | --- | --- | --- |
 | `operation_id` | uuid, PK | Mã ổn định do Order hoặc API quản trị cấp. |
 | `order_id` | uuid, NULL, tham chiếu ngoài | Đơn liên quan; NULL với nhập/điều chỉnh kho. |
-| `operation_type` | varchar(20) | RESERVE, RELEASE, COMMIT, ADJUST. |
+| `operation_type` | varchar(20) | RESERVE, RELEASE, COMMIT, ADJUST, INITIALIZE (idempotency khởi tạo kho). |
 | `request_hash` | varchar(64) | SHA-256 payload chuẩn hóa để phát hiện dùng lại mã với dữ liệu khác. |
 | `result_status` | varchar(20) | SUCCEEDED hoặc REJECTED. |
 | `result_payload` | jsonb | Kết quả đã lưu để trả lại khi nhận lặp. |
