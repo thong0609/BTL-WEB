@@ -4,6 +4,9 @@ Tài liệu được xếp theo mục đích sử dụng. [README dự án](../R
 
 Muốn chạy code ngay, bắt đầu từ [Hướng dẫn chạy dự án](development/HUONG-DAN-CHAY-DU-AN.md): lần đầu cài đặt, env, migration và các lần chạy tiếp theo.
 
+Phần Inventory đã có [hướng dẫn INV-01](development/INV-01.md): API quản trị,
+idempotency, migration và các phụ thuộc Identity/Catalog cần ghép.
+
 | Thư mục | Nội dung | Tài liệu |
 | --- | --- | --- |
 | `product/` | Sản phẩm và yêu cầu nghiệp vụ | [Website](product/MO-TA-WEBSITE.md), [use case](product/DAC-TA-NGHIEP-VU.md) |

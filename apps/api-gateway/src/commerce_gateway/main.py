@@ -8,6 +8,7 @@ from fastapi import FastAPI
 
 from commerce_backend_common.application import build_app
 from commerce_gateway.api import router
+from commerce_gateway.inventory import router as inventory_router
 from commerce_gateway.settings import Settings
 
 
@@ -20,17 +21,29 @@ def create_app(
 
     @asynccontextmanager
     async def resources(app: FastAPI) -> AsyncIterator[None]:
-        async with httpx.AsyncClient(
-            base_url=str(config.catalog_base_url),
-            timeout=httpx.Timeout(config.http_timeout_seconds),
-            limits=httpx.Limits(max_connections=config.http_max_connections),
-            follow_redirects=False,
-            trust_env=False,
-            transport=transport,
-        ) as client:
+        async with (
+            httpx.AsyncClient(
+                base_url=str(config.catalog_base_url),
+                timeout=httpx.Timeout(config.http_timeout_seconds),
+                limits=httpx.Limits(max_connections=config.http_max_connections),
+                follow_redirects=False,
+                trust_env=False,
+                transport=transport,
+            ) as client,
+            httpx.AsyncClient(
+                base_url=str(config.inventory_base_url),
+                timeout=httpx.Timeout(config.http_timeout_seconds),
+                limits=httpx.Limits(max_connections=config.http_max_connections),
+                follow_redirects=False,
+                trust_env=False,
+                transport=transport,
+            ) as inventory,
+        ):
             app.state.catalog_client = client
+            app.state.inventory_client = inventory
             yield
 
     app = build_app(config, resources)
     app.include_router(router)
+    app.include_router(inventory_router)
     return app
