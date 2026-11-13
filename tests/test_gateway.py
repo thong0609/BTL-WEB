@@ -8,6 +8,55 @@ from commerce_gateway.main import create_app
 from commerce_gateway.settings import Settings
 
 
+@pytest.mark.parametrize(
+    "method,path,status",
+    [
+        ("GET", "?lowStock=true&pageSize=1", 200),
+        ("POST", "/items", 201),
+        ("POST", "/adjustments", 409),
+        ("GET", f"/{uuid4()}/movements", 200),
+    ],
+)
+def test_inventory_forwarding(method, path, status):
+    seen = []
+
+    def upstream(request):
+        seen.append(request)
+        return httpx.Response(status, json={"example": "upstream-result"})
+
+    app = create_app(Settings(_env_file=None), transport=httpx.MockTransport(upstream))
+    with TestClient(app) as client:
+        response = client.request(
+            method,
+            "/api/v1/admin/inventory" + path,
+            json={"delta": 3},
+            headers={
+                "Authorization": "Bearer admin",
+                "Idempotency-Key": "stable-key",
+                "X-User-Role": "ADMIN",
+                "Cookie": "private-cookie=secret",
+            },
+        )
+        assert response.status_code == status
+        assert response.json() == {"example": "upstream-result"}
+    assert app.state.inventory_client.is_closed
+    request = seen[0]
+    assert request.url.host == "127.0.0.1" and request.url.port == 3003
+    assert request.headers["authorization"] == "Bearer admin"
+    assert request.headers["idempotency-key"] == "stable-key"
+    assert "x-user-role" not in request.headers and "cookie" not in request.headers
+    assert request.headers["x-request-id"] == response.headers["x-request-id"]
+
+
+def test_inventory_gateway_does_not_expose_internal_paths():
+    def unexpected(request):
+        raise AssertionError("Unknown route must not call an upstream")
+
+    app = create_app(Settings(_env_file=None), transport=httpx.MockTransport(unexpected))
+    with TestClient(app) as client:
+        assert client.get("/api/v1/admin/inventory/internal/products/batch").status_code == 404
+
+
 def test_fixed_upstream_and_client_cleanup():
     request_id = str(uuid4())
     seen = []

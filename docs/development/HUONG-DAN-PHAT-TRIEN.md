@@ -8,6 +8,11 @@
 
 ## 2. Trước khi bắt đầu code
 
+**Cập nhật Inventory:** đã có các API quản trị INV-01 cùng migration, idempotency
+và kiểm thử transaction/cạnh tranh. Xem [INV-01](INV-01.md) để cấu hình, chạy và
+ghép xác thực Identity/lookup Catalog. Hai dependency nghiệp vụ này hiện chưa có
+trong skeleton của các service tương ứng.
+
 Bổ sung base bước 4: [RabbitMQ transport và worker monitor](SETUP-STEP-4.md) đã được triển khai cho Inventory/Order/Payment. API không auto-consume; topology/smoke cần lệnh riêng. Worker hiện chỉ theo dõi kết nối, chưa xử lý nghiệp vụ. Test process dùng APP_ENV=test, bỏ đọc .env dev và chặn URL DB/broker remote; không dùng credential dev trong test.
 
 Supabase là **database dev dùng chung ngay khi cả nhóm phát triển**, theo làm rõ ngày 28/10/2026; đọc [thiết kế kết nối và phối hợp](../infrastructure/PHUONG-AN-SUPABASE.md). FastAPI trên laptop dùng DATABASE_URL theo role service mình. Code riêng dùng RabbitMQ local từng máy; message không sang broker máy khác, nhưng dữ liệu Supabase vẫn thay đổi chung. Muốn thử hết luồng trên một máy cần đủ service/worker và handler. Khi ghép service giữa nhiều máy, dùng cùng broker/vhost và phân công worker. Test/reset dùng DB/broker riêng. Không tự bật worker/job quét dữ liệu chung trên mọi máy; production chưa tính tới.

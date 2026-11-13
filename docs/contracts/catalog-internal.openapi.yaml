@@ -1,0 +1,73 @@
+openapi: 3.1.0
+info:
+  title: Catalog internal product lookup consumed by Inventory
+  version: 0.1.0
+  description: >-
+    Consumer contract for INV-01. Catalog currently has a skeleton only;
+    its owner must implement and review this endpoint before live integration.
+    This endpoint is not exposed by the public gateway.
+paths:
+  /internal/products/batch:
+    post:
+      operationId: internal_products_batch
+      security:
+        - serviceBearer: []
+      description: >-
+        Authorize the Inventory caller using its dedicated service credential.
+        Return existing requested products, including drafts and inactive products
+        for warehouse initialization. Omit IDs that do not exist. Additional
+        product fields can be included for other callers.
+      parameters:
+        - in: header
+          name: X-Request-Id
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productIds]
+              additionalProperties: false
+              properties:
+                productIds:
+                  type: array
+                  minItems: 1
+                  maxItems: 50
+                  uniqueItems: true
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '200':
+          description: Existing products; items is empty when none exist.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    maxItems: 50
+                    items:
+                      type: object
+                      required: [id]
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+        '400':
+          description: Invalid request.
+        '401':
+          description: Invalid service credential.
+        '403':
+          description: Caller is not allowed to access this endpoint.
+        '503':
+          description: Catalog is unavailable.
+components:
+  securitySchemes:
+    serviceBearer:
+      type: http
+      scheme: bearer

@@ -2,6 +2,10 @@
 
 Phiên bản thiết kế 0.1. [openapi.yaml](openapi.yaml) là cấu trúc máy đọc cho request/response. File này giải thích ngữ nghĩa, quyền và những endpoint còn cần mở rộng khi triển khai. Chưa có API server chạy thực tế.
 
+Cập nhật INV-01: bốn API quản trị kho và routing gateway đã được triển khai;
+xem [cách chạy và giới hạn tích hợp](../development/INV-01.md). Các endpoint khác
+trong bảng vẫn là contract thiết kế nếu service tương ứng chưa triển khai.
+
 ## 1. Quy ước chung
 
 Triển khai backend bằng FastAPI/Python theo quyết định 28/10/2026. Pydantic alias/serializer phải giữ đúng contract camelCase, tiền dạng chuỗi và Error envelope bên dưới. Validation mặc định 422 của FastAPI cần handler chuẩn hóa sang 400 theo hợp đồng; schema tự sinh của service không tự động thay thế OpenAPI public đã thống nhất.
@@ -95,6 +99,7 @@ Không trả trực tiếp order_workflows với operationId, retry payload hay 
 Chỉ mạng nội bộ + xác thực service, không đưa qua routing public:
 
 - Catalog `POST /internal/products/batch`: lấy id/SKU/tên/status/price/version cho tối đa 50 sản phẩm.
+  Contract lookup tối thiểu Inventory cần cho INV-01 nằm trong [Catalog internal OpenAPI](catalog-internal.openapi.yaml); cần chủ Catalog review/triển khai trước tích hợp thật.
 - Inventory `POST /internal/availability/batch`: trạng thái có thể bán theo danh sách ID; không giữ hàng.
 - Inventory `GET /internal/reservations/by-order/{orderId}`: đối chiếu reservation khi tiến trình treo.
 - Payment `GET /internal/payments/by-order/{orderId}`: đối chiếu trạng thái/version và refund nếu có.
