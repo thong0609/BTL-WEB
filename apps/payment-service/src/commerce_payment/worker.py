@@ -61,9 +61,7 @@ async def _on_message(
     await message.ack()
 
 
-async def _background(
-    database: Database, broker: Broker, log: FilteringBoundLogger
-) -> None:
+async def _background(database: Database, broker: Broker, log: FilteringBoundLogger) -> None:
     while True:
         try:
             async with database.session() as session:
