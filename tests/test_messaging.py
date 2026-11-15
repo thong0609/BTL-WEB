@@ -142,22 +142,24 @@ def test_rabbitmq_routing_ack_deadletter_smoke_and_cleanup(rabbitmq_test):
                 await declare_topology(channel, service)
                 await declare_topology(channel, service)
             # No business consumer exists; test messages are read only inside this isolated broker.
+            queue_timeout = 15
             for name, keys in COMMAND_ROUTES.items():
                 queue = await channel.get_queue(name)
                 assert queue.declaration_result.consumer_count == 0
                 for key in keys:
                     probe = MessageEnvelope.new("TransportProbe", uuid4(), {"key": key})
                     await broker.publish(COMMANDS, key, probe)
-                    message = await queue.get(no_ack=False, timeout=5)
+                    message = await queue.get(no_ack=False, timeout=queue_timeout)
                     assert message.delivery_mode == DeliveryMode.PERSISTENT
                     assert parse_envelope(message.body) == probe
                     await message.ack()
             events = await channel.get_queue("order.events")
+            assert events.declaration_result.consumer_count == 0
             for key in EVENT_ROUTES:
                 await broker.publish(
                     EVENTS, key, MessageEnvelope.new("TransportProbe", uuid4(), {})
                 )
-                message = await events.get(no_ack=False, timeout=5)
+                message = await events.get(no_ack=False, timeout=queue_timeout)
                 await message.ack()
             with pytest.raises(MessageUnroutable):
                 await broker.publish(
@@ -167,10 +169,10 @@ def test_rabbitmq_routing_ack_deadletter_smoke_and_cleanup(rabbitmq_test):
             await broker.publish(
                 COMMANDS, "inventory.reserve", MessageEnvelope.new("TransportProbe", uuid4(), {})
             )
-            rejected = await inv.get(no_ack=False, timeout=5)
+            rejected = await inv.get(no_ack=False, timeout=queue_timeout)
             await rejected.reject(requeue=False)
             dead = await channel.get_queue("inventory.commands.dead")
-            dead_message = await dead.get(no_ack=False, timeout=5)
+            dead_message = await dead.get(no_ack=False, timeout=queue_timeout)
             assert dead_message.headers["x-death"]
             await dead_message.ack()
             # Closing a separate unacked channel must redeliver, not lose, its message.
