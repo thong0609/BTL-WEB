@@ -50,6 +50,10 @@ Validation thất bại trước khi tiếp nhận chưa giữ key. Đã tạo o
 | POST | `/auth/refresh` | Identity, cookie + Origin/CSRF | Access token mới, rotate cookie |
 | POST | `/auth/logout` | Identity, cookie + Origin/CSRF | 204, thu hồi phiên |
 | GET | `/users/me` | Identity, đã login | Hồ sơ |
+| GET | `/users/me/identities` | Identity, đã login | `{hasPassword, identities:[{provider, email}]}` (đề xuất) |
+| GET | `/auth/google/start` | Identity, public, mở bằng trình duyệt | 302 sang Google + cookie `googleOAuth` (đề xuất) |
+| GET | `/auth/google/callback` | Identity, public, Google gọi qua trình duyệt | Trang HTML (popup) hoặc 302 (redirect); xem mục 5A (đề xuất) |
+| POST | `/auth/google/link/begin` | Identity, đã login, Origin/Referer | 204 + cookie `googleLinkTicket` (đề xuất) |
 | GET | `/products`, `/products/{id}`, `/categories` | Catalog public | Chỉ dữ liệu bán công khai |
 | POST | `/orders/quote` | Order CUSTOMER | Quote không giữ hàng |
 | POST | `/orders` | Order CUSTOMER | 202 + orderId |
@@ -85,6 +89,7 @@ Không trả trực tiếp order_workflows với operationId, retry payload hay 
 | VALIDATION_ERROR | 400 | Chỉ rõ field |
 | AUTH_INVALID / SESSION_EXPIRED | 401 | Login/refresh phù hợp |
 | FORBIDDEN | 403 | Không thử lại cùng quyền |
+| REAUTH_FAILED | 403 của `/auth/google/link/begin` | Mật khẩu xác thực lại sai hoặc tài khoản không có mật khẩu; không gọi refresh (đề xuất) |
 | NOT_FOUND | 404 | Không lộ tài nguyên người khác |
 | PRICE_CHANGED | 409 trước tạo đơn | Xem quote mới, xác nhận lại |
 | IDEMPOTENCY_CONFLICT | 409 | Không dùng key cũ cho payload mới |
@@ -93,6 +98,49 @@ Không trả trực tiếp order_workflows với operationId, retry payload hay 
 | INSUFFICIENT_STOCK | Kết quả workflow/inventory | Không tự retry thành đơn mới |
 | PAYMENT_FAILED | Kết quả workflow | Chờ hủy xong rồi đặt lại nếu muốn |
 | DEPENDENCY_UNAVAILABLE | 503 trước tiếp nhận | Retry có kiểm soát; nếu mất phản hồi vẫn replay cùng key |
+
+## 5A. Đăng nhập Google và liên kết tài khoản (đề xuất)
+
+Trạng thái: đề xuất, chưa triển khai. Chi tiết cookie và redirect phụ thuộc kết quả spike Next rewrite (302 và Set-Cookie của upstream có đi nguyên qua rewrite hay không); có thể chỉnh trước khi triển khai.
+
+Google chỉ xác thực danh tính. Identity xác minh ID Token, tìm hoặc tạo User nội bộ rồi cấp token của hệ thống; Google token không được lưu và không dùng làm token hệ thống.
+
+Luồng:
+
+- Đăng nhập: client mở `GET /auth/google/start` (`intent=login`, mặc định) bằng popup hoặc điều hướng cả trang. Callback đặt refresh cookie nếu thành công, client gọi `POST /auth/refresh` để lấy access token.
+- Liên kết: người dùng đang đăng nhập gọi `POST /auth/google/link/begin` với `{password}`; thành công trả 204 và cookie `googleLinkTicket`; client mở `GET /auth/google/start?intent=link`. Điều kiện ở callback: ticket còn hạn và đúng User, ID Token hợp lệ, `email_verified` đúng, email Google khớp email nội bộ, `sub` chưa gắn User khác, User chưa có Google identity (MVP: tối đa một).
+- Email Google trùng tài khoản đã có nhưng chưa liên kết: không cấp phiên, không tự gộp tài khoản; kết quả `ACCOUNT_LINK_REQUIRED`, người dùng đăng nhập bằng mật khẩu rồi liên kết từ trang hồ sơ.
+- Tài khoản tạo bằng Google: `fullName` lấy từ claim `name`; nếu trống thì lấy phần trước `@` của email, cắt khoảng trắng, tối đa 150 ký tự, tối thiểu 1 ký tự; nếu vẫn rỗng trả `GOOGLE_AUTH_FAILED`.
+
+Cookie (đều HttpOnly, SameSite=Lax, Path `/api/v1/auth/google`, Secure khi HTTPS, nội dung mã hóa có xác thực và không có ý nghĩa với client, bị xóa ở callback):
+
+| Cookie | TTL | Đặt bởi |
+| --- | --- | --- |
+| `googleOAuth` | 10 phút | `/auth/google/start` |
+| `googleLinkTicket` | 5 phút | `/auth/google/link/begin` |
+
+Kết quả của callback không dùng Error envelope và không phải HTTP status JSON, vì trình duyệt đang điều hướng. Kết quả gồm `status` (`success` hoặc `error`) và, khi lỗi, `code`:
+
+| code | Ý nghĩa |
+| --- | --- |
+| ACCOUNT_LINK_REQUIRED | Email Google trùng tài khoản đã có; cần đăng nhập mật khẩu rồi liên kết |
+| GOOGLE_AUTH_FAILED | Xác minh thất bại (state, nonce, chữ ký, `aud`, `iss`, hết hạn, thiếu code) hoặc User bị khóa; thông báo chung, không phân biệt lý do |
+| GOOGLE_EMAIL_UNVERIFIED | Google báo email chưa xác minh |
+| GOOGLE_EMAIL_MISMATCH | Email Google không khớp email nội bộ khi liên kết |
+| GOOGLE_IDENTITY_TAKEN | `sub` đã gắn User khác |
+| GOOGLE_ALREADY_LINKED | User đã có Google identity |
+
+Cách báo kết quả:
+
+- `display=popup`: callback trả HTML nhỏ, gửi `{type, status, code?}` bằng `postMessage` tới cửa sổ mở popup và qua `BroadcastChannel` cùng origin. Bên nhận kiểm tra `event.origin === location.origin`. Message không chứa token. Trang HTML có `Cache-Control: no-store` và `Referrer-Policy: no-referrer`.
+- `display=redirect`: callback trả 302 về một route frontend do cấu hình phía server quyết định, không nhận URL từ request; kết quả nằm trong query string (tên tham số do thiết kế Frontend chốt). Dùng khi `window.open` trả null, khi trình duyệt làm mất `window.opener`, hoặc khi người dùng chọn.
+- Rủi ro chưa kiểm chứng: việc trang Google có làm mất `window.opener` hay không cần test với Google thật; kênh `BroadcastChannel` và `display=redirect` là phương án giảm rủi ro, không phải bảo đảm.
+
+Tham số sai của `/auth/google/start` (giá trị `intent` hoặc `display` ngoài danh sách, hoặc `intent=link` thiếu ticket hợp lệ) trả 400 `VALIDATION_ERROR` dạng JSON.
+
+`/auth/google/link/begin` kiểm tra Origin, thiếu thì Referer, theo cùng danh sách origin tin cậy như `/auth/refresh` và `/auth/logout`. `/auth/google/start` và `/auth/google/callback` không nằm trong danh sách này vì là điều hướng GET và được bảo vệ bằng `state`.
+
+Rate limiting và 429 cho các endpoint auth chưa nằm trong đề xuất này; sẽ có quyết định riêng.
 
 ## 6. API nội bộ
 
