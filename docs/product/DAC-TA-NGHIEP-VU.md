@@ -29,6 +29,8 @@ Khách chưa đăng nhập được xem hàng và dùng giỏ trên cùng trình
 | --- | --- | --- | --- | --- |
 | UC-ID-01 | Đăng ký | Khách | UI-04 | AT-01 |
 | UC-ID-02 | Đăng nhập/refresh/logout | Khách, ADMIN | UI-04 | AT-02 |
+| UC-ID-03 | Đăng nhập bằng Google | Khách | UI-04 | AT-27 |
+| UC-ID-04 | Liên kết tài khoản Google | CUSTOMER, ADMIN | UI-09 | AT-28 |
 | UC-CAT-01 | Tìm/xem hàng | Mọi người | UI-01, UI-02 | AT-03 |
 | UC-CART-01 | Quản lý giỏ | Khách | UI-03 | AT-04 |
 | UC-ORD-01 | Đặt COD | CUSTOMER | UI-05, UI-06 | AT-05 |
@@ -50,6 +52,14 @@ Khách chưa đăng nhập được xem hàng và dùng giỏ trên cùng trình
 ### UC-ID-02 — Đăng nhập và phiên
 
 Nhập email/mật khẩu → kiểm tra ACTIVE → cấp access token và refresh cookie. Lỗi đăng nhập có thông báo chung, không tiết lộ mật khẩu/email nào sai. Frontend refresh một lần khi access token hết hạn; nhiều request đồng thời dùng chung một lần refresh. Token cũ được rotate và phát hiện tái sử dụng theo family. Logout thu hồi refresh session và xóa cookie; access token đã cấp còn hiệu lực đến hạn nếu chưa bổ sung thu hồi. DISABLED không được đăng nhập/refresh. AT-02.
+
+### UC-ID-03 — Đăng nhập bằng Google
+
+Khách chọn đăng nhập bằng Google (popup, dự phòng điều hướng cả trang). Identity xác minh ID Token (chữ ký, `iss`, `aud`, hạn, `nonce`, `email_verified`), tìm User theo Google `sub`, hoặc tạo CUSTOMER ACTIVE nếu chưa có và email chưa thuộc tài khoản nào; không bao giờ tạo ADMIN. Họ tên lấy từ Google, thiếu thì dùng phần trước `@` của email. Thành công thì Identity cấp access token và refresh cookie của hệ thống như UC-ID-02; Google token không được lưu và không dùng làm token hệ thống; kết quả báo về trang không chứa token. Email Google trùng tài khoản đã có (chưa liên kết) không cấp phiên và không tự gộp: báo `ACCOUNT_LINK_REQUIRED`, người dùng đăng nhập bằng mật khẩu rồi làm UC-ID-04. Mọi lỗi xác minh và User DISABLED dùng một thông báo chung. Đặc tả kênh kết quả: mục 5A của [HTTP-API.md](../contracts/HTTP-API.md). AT-27.
+
+### UC-ID-04 — Liên kết tài khoản Google
+
+**Điều kiện:** đã đăng nhập, User chưa có Google identity (MVP tối đa một). Người dùng nhập lại mật khẩu; sai mật khẩu hoặc tài khoản không có mật khẩu thì `REAUTH_FAILED`. Sau đó đăng nhập Google; chỉ liên kết khi email Google đã xác minh và khớp email nội bộ, và Google `sub` chưa gắn User khác. Không có hủy liên kết trong MVP. Tài khoản chỉ có Google chưa đặt được mật khẩu và đăng ký chưa xác minh email: hoãn khỏi MVP. AT-28.
 
 ### UC-CAT-01 — Tìm và xem hàng
 

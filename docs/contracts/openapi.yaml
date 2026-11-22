@@ -140,6 +140,157 @@
           "$ref": "#/components/responses/Conflict"
         "503":
           "$ref": "#/components/responses/Unavailable"
+  "/auth/google/start":
+    "get":
+      "operationId": "get_auth_google_start"
+      "tags":
+        - "auth"
+      "summary": "Start Google sign-in or account linking (browser navigation, not fetch)"
+      "description": "Proposal. Opened by the browser (popup or full-page redirect), never called with fetch. Redirects to Google (authorization code + PKCE + state + nonce, scope openid email profile only, no offline access) and sets the short-lived googleOAuth cookie. intent=link additionally requires a valid googleLinkTicket cookie obtained from POST /auth/google/link/begin. Cookie and redirect details depend on the Next rewrite spike (302 + Set-Cookie)."
+      "security": []
+      "parameters":
+        -
+          "name": "intent"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+            "enum":
+              - "login"
+              - "link"
+            "default": "login"
+        -
+          "name": "display"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+            "enum":
+              - "popup"
+              - "redirect"
+            "default": "popup"
+      "responses":
+        "302":
+          "description": "Redirect to Google"
+          "headers":
+            "Location":
+              "description": "Google authorization endpoint URL."
+              "schema":
+                "type": "string"
+            "Set-Cookie":
+              "description": "googleOAuth cookie; HttpOnly, SameSite=Lax, Path=/api/v1/auth/google, Secure on HTTPS, TTL 10 minutes, opaque encrypted content."
+              "schema":
+                "type": "string"
+            "Cache-Control":
+              "description": "no-store"
+              "schema":
+                "type": "string"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/auth/google/callback":
+    "get":
+      "operationId": "get_auth_google_callback"
+      "tags":
+        - "auth"
+      "summary": "Google redirect target; reports the result to the opener or the frontend"
+      "description": "Proposal. Called by Google through the browser. Verifies state, nonce and the Google ID Token, then finishes login or linking. display=popup (remembered in the googleOAuth cookie) returns a small HTML page that reports the result by postMessage and BroadcastChannel; display=redirect returns 302 to a frontend route with the result in the query string. Results use the GOOGLE_* codes of HTTP-API.md section 5A, not the JSON Error envelope. On successful login the refresh cookie is set and the frontend then calls POST /auth/refresh; no token is placed in the page or the URL."
+      "security": []
+      "parameters":
+        -
+          "name": "code"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+        -
+          "name": "state"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+        -
+          "name": "error"
+          "in": "query"
+          "required": false
+          "schema":
+            "type": "string"
+      "responses":
+        "200":
+          "description": "display=popup: HTML result page"
+          "content":
+            "text/html":
+              "schema":
+                "type": "string"
+          "headers":
+            "Set-Cookie":
+              "description": "Refresh cookie on successful login; googleOAuth and googleLinkTicket cookies are expired."
+              "schema":
+                "type": "string"
+            "Cache-Control":
+              "description": "no-store"
+              "schema":
+                "type": "string"
+            "Referrer-Policy":
+              "description": "no-referrer"
+              "schema":
+                "type": "string"
+        "302":
+          "description": "display=redirect: back to a frontend route with the result in the query string"
+          "headers":
+            "Location":
+              "description": "Frontend route chosen by the server configuration; never taken from the request."
+              "schema":
+                "type": "string"
+            "Set-Cookie":
+              "description": "Same as the 200 response."
+              "schema":
+                "type": "string"
+            "Cache-Control":
+              "description": "no-store"
+              "schema":
+                "type": "string"
+            "Referrer-Policy":
+              "description": "no-referrer"
+              "schema":
+                "type": "string"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/auth/google/link/begin":
+    "post":
+      "operationId": "post_auth_google_link_begin"
+      "tags":
+        - "auth"
+      "summary": "Re-authenticate with password and start linking a Google identity"
+      "description": "Proposal. Checks the password of the signed-in user and sets the short-lived googleLinkTicket cookie bound to that user; the client then opens GET /auth/google/start?intent=link. Cookie-dependent state, so Origin/Referer is validated like POST /auth/refresh. A wrong password, or an account without a password, returns 403 REAUTH_FAILED (not 401, so the frontend does not call refresh in vain)."
+      "security":
+        -
+          "bearerAuth": []
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/LinkBegin"
+      "responses":
+        "204":
+          "description": "Ticket issued"
+          "headers":
+            "Set-Cookie":
+              "description": "googleLinkTicket cookie; HttpOnly, SameSite=Lax, Path=/api/v1/auth/google, Secure on HTTPS, TTL 5 minutes, opaque encrypted content."
+              "schema":
+                "type": "string"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
   "/users/me":
     "get":
       "operationId": "get_users_me"
@@ -166,6 +317,29 @@
           "$ref": "#/components/responses/NotFound"
         "409":
           "$ref": "#/components/responses/Conflict"
+        "503":
+          "$ref": "#/components/responses/Unavailable"
+  "/users/me/identities":
+    "get":
+      "operationId": "get_users_me_identities"
+      "tags":
+        - "users"
+      "summary": "Sign-in methods of the current user"
+      "description": "Proposal. Kept separate from User on purpose: User is closed (additionalProperties false), is embedded in Token and is read by other services through GET /users/me."
+      "security":
+        -
+          "bearerAuth": []
+      "responses":
+        "200":
+          "description": "Success"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/UserIdentities"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
         "503":
           "$ref": "#/components/responses/Unavailable"
   "/products":
@@ -1717,6 +1891,43 @@
         - "accessToken"
         - "expiresIn"
         - "user"
+      "additionalProperties": false
+    "LinkBegin":
+      "type": "object"
+      "properties":
+        "password":
+          "type": "string"
+          "format": "password"
+      "required":
+        - "password"
+      "additionalProperties": false
+    "UserIdentity":
+      "type": "object"
+      "properties":
+        "provider":
+          "type": "string"
+          "enum":
+            - "GOOGLE"
+        "email":
+          "type":
+            - "string"
+            - "null"
+      "required":
+        - "provider"
+        - "email"
+      "additionalProperties": false
+    "UserIdentities":
+      "type": "object"
+      "properties":
+        "hasPassword":
+          "type": "boolean"
+        "identities":
+          "type": "array"
+          "items":
+            "$ref": "#/components/schemas/UserIdentity"
+      "required":
+        - "hasPassword"
+        - "identities"
       "additionalProperties": false
     "Category":
       "type": "object"

@@ -30,11 +30,12 @@ Layout khách: header logo/tìm kiếm/tài khoản/giỏ, vùng nội dung và 
 | UI-01 `/` | Tìm tên, danh mục, khoảng giá, sort; thẻ ảnh/tên/giá/còn hàng; phân trang | UC-CAT-01; GET products/categories; giữ filter trên URL |
 | UI-02 `/products/:id` | Gallery, tên, mô tả, thông số, giá, số lượng, thêm giỏ | Hết hàng khóa thêm; tồn chưa rõ giải thích; không hiện số tồn nội bộ |
 | UI-03 `/cart` | Dòng hàng, tăng/giảm, xóa, tiền dự kiến, tiếp tục mua/checkout | UC-CART-01; giỏ rỗng không checkout; giá chỉ tham khảo |
-| UI-04 `/login`, `/register` | Email/mật khẩu; đăng ký thêm tên/xác nhận mật khẩu | Giữ giỏ; sau login quay checkout hoặc đường dẫn nội bộ hợp lệ; không redirect tùy ý ra site khác |
+| UI-04 `/login`, `/register` | Email/mật khẩu; nút đăng nhập bằng Google (popup, dự phòng redirect); đăng ký thêm tên/xác nhận mật khẩu | Giữ giỏ; sau login quay checkout hoặc đường dẫn nội bộ hợp lệ; không redirect tùy ý ra site khác; UC-ID-03; kết quả Google chỉ gồm status/code, ACCOUNT_LINK_REQUIRED hướng sang đăng nhập mật khẩu rồi liên kết ở UI-09 |
 | UI-05 `/checkout` | Người nhận, điện thoại, địa chỉ, ghi chú, COD/SIMULATED, quote, tổng | UC-ORD-01/02; refresh quote khi thay giỏ; khóa nút khi gửi |
 | UI-06 `/checkout/result/:id` | Mã đơn, đang xử lý/thành công/từ chối, thanh toán, xem chi tiết | 202 không hiển thị thành công ngay; polling có backoff; không yêu cầu trả lại khi timeout |
 | UI-07 `/orders` | Mã, ngày, tổng, trạng thái đơn và tiền, lọc/phân trang | Chỉ của mình; PROCESSING/REJECTED vẫn hiện |
 | UI-08 `/orders/:id` | Snapshot, địa chỉ, timeline, trạng thái tiền/đơn, hủy có lý do | Chỉ hiện hủy khi AWAITING_CONFIRMATION và không có workflow xung đột |
+| UI-09 `/account` | Cách đăng nhập hiện có (có mật khẩu hay không, Google đã liên kết kèm email); nhập mật khẩu để liên kết Google | UC-ID-04; GET /users/me/identities, POST /auth/google/link/begin; không có hủy liên kết trong MVP; lỗi GOOGLE_* hiện bằng chữ |
 
 ### Wireframe checkout
 
