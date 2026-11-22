@@ -143,7 +143,7 @@ Cơ chế bắt buộc:
 
 | Database | Bảng chính đề xuất |
 | --- | --- |
-| `identity_db` | `users`, `refresh_sessions` |
+| `identity_db` | `users`, `refresh_sessions`, `user_identities` |
 | `catalog_db` | `products`, `categories`, `product_images` |
 | `inventory_db` | `stock_items`, `reservations`, `reservation_items`, `inventory_operations`, `stock_movements`, `processed_messages`, `outbox_messages` |
 | `orders_db` | `orders`, `order_items`, `order_status_history`, `order_workflows`, `idempotency_requests`, `order_action_requests`, `processed_messages`, `outbox_messages` |
@@ -169,7 +169,7 @@ Thiết kế dưới đây là schema đề xuất để triển khai MVP, chưa
 - Không xóa cứng đơn, thanh toán hoặc lịch sử kho trong MVP. FK lịch sử dùng RESTRICT; chính sách lưu trữ dữ liệu sau này phải được thiết kế riêng.
 - `version integer DEFAULT 0` dùng khóa lạc quan: UPDATE theo id và version cũ, tăng version khi thành công. Không thay thế transaction/khóa khi cần cập nhật nhiều hàng.
 
-**Quan hệ nội bộ:** Identity: users 1–N refresh_sessions; Catalog: categories 1–N products 1–N product_images; Inventory: reservations 1–N reservation_items N–1 stock_items; Order: orders 1–N order_items/history và 1–1 workflow; Payment: payment_attempts 1–0..1 refund_attempts trong MVP.
+**Quan hệ nội bộ:** Identity: users 1–N refresh_sessions và 1–N user_identities; Catalog: categories 1–N products 1–N product_images; Inventory: reservations 1–N reservation_items N–1 stock_items; Order: orders 1–N order_items/history và 1–1 workflow; Payment: payment_attempts 1–0..1 refund_attempts trong MVP.
 
 **Bảng bổ sung so với danh sách tóm tắt:** `inventory_operations` ghi kết quả command kho kể cả bị từ chối để retry an toàn; `payment_status_history` lưu lịch sử thanh toán/hoàn tiền. Hai bảng này thuộc MVP.
 
@@ -181,14 +181,14 @@ Tài khoản khách và quản trị; chưa tách bảng role vì MVP chỉ có 
 | --- | --- | --- |
 | `id` | uuid, PK | Mã người dùng. |
 | `email` | varchar(254), UQ | Email được trim và chuẩn hóa chữ thường trước khi lưu. |
-| `password_hash` | text | Chuỗi hash Argon2id có tham số; không lưu mật khẩu gốc. |
+| `password_hash` | text, NULL | Chuỗi hash Argon2id có tham số; không lưu mật khẩu gốc. |
 | `full_name` | varchar(150) | Tên hiển thị; khác tên người nhận snapshot trên đơn. |
 | `role` | varchar(20) | CUSTOMER hoặc ADMIN. |
 | `status` | varchar(20) | ACTIVE hoặc DISABLED. |
 | `created_at` | timestamptz | Thời điểm tạo. |
 | `updated_at` | timestamptz | Lần cập nhật gần nhất. |
 
-Ràng buộc: email chuẩn hóa duy nhất; CHECK role/status. Tài khoản bị vô hiệu hóa không được cấp/refresh token mới; thu hồi phiên hiện có theo chính sách xác thực.
+Ràng buộc: email chuẩn hóa duy nhất; CHECK role/status. Quy tắc có password hoặc ít nhất một identity được enforce ở application. Tài khoản bị vô hiệu hóa không được cấp/refresh token mới; thu hồi phiên hiện có theo chính sách xác thực.
 
 #### F.3. identity_db — refresh_sessions
 
@@ -198,15 +198,29 @@ Mỗi hàng đại diện một refresh token trong một chuỗi luân chuyển
 | --- | --- | --- |
 | `id` | uuid, PK | Mã refresh session/token record. |
 | `user_id` | uuid, FK users.id | Chủ tài khoản. |
-| `family_id` | uuid, index | Nhóm token của một phiên đăng nhập, dùng thu hồi cả chuỗi khi phát hiện tái sử dụng. |
-| `token_hash` | text, UQ | Bản băm token ngẫu nhiên; không lưu token gốc. |
-| `expires_at` | timestamptz | Hạn token. |
+| `family_id` | uuid | Nhóm token của một phiên đăng nhập, dùng thu hồi cả chuỗi khi phát hiện tái sử dụng. |
+| `token_hash` | varchar(64), UQ | Bản băm token ngẫu nhiên; không lưu token gốc. |
+| `expires_at` | timestamptz | Idle expiry của token. |
+| `family_expires_at` | timestamptz | Hạn tối đa của cả family. |
 | `revoked_at` | timestamptz, NULL | Thời điểm logout/thu hồi/rotate. |
 | `replaced_by_id` | uuid, NULL, FK refresh_sessions.id | Token record kế tiếp khi rotate. |
 | `user_agent` | text, NULL | Thông tin trình duyệt để hỗ trợ quản lý phiên. |
 | `created_at` | timestamptz | Thời điểm tạo. |
 
-Index (user_id, revoked_at), expires_at. Rotate trong transaction: kiểm tra chưa thu hồi/chưa hết hạn, thu hồi record cũ và tạo record mới cùng family. Có lịch dọn record hết hạn theo thời hạn lưu đã thống nhất.
+CHECK token_hash dạng 64 ký tự hex thường; expires_at <= family_expires_at; replaced_by_id NULL hoặc revoked_at NOT NULL; replaced_by_id NULL hoặc khác id. Partial UNIQUE (family_id) WHERE revoked_at IS NULL. Index (user_id, revoked_at), family_expires_at. Rotate trong transaction: kiểm tra chưa thu hồi/chưa hết hạn, thu hồi record cũ và tạo record mới cùng family. Có lịch dọn record hết hạn theo thời hạn lưu đã thống nhất.
+
+#### F.3A. identity_db — user_identities
+
+Liên kết tài khoản với nhà cung cấp danh tính ngoài. Mỗi người dùng tối đa một identity cho mỗi provider; provider_subject duy nhất trong từng provider. Provider dùng varchar kèm CHECK (hiện tại GOOGLE). Xóa User có identity bị RESTRICT.
+
+| Field | Kiểu / yêu cầu | Ý nghĩa |
+| --- | --- | --- |
+| `id` | uuid, PK | Mã identity. |
+| `user_id` | uuid, FK users.id | Chủ tài khoản. |
+| `provider` | varchar(20) | Nhà cung cấp danh tính. |
+| `provider_subject` | varchar(255) | Mã định danh ổn định từ provider. |
+| `provider_email` | varchar(254), NULL | Email do provider cung cấp. |
+| `created_at` | timestamptz | Thời điểm liên kết. |
 
 #### F.4. catalog_db — categories
 

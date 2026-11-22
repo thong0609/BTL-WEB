@@ -256,6 +256,8 @@ def test_postgres_bootstrap_migrations_and_runtime_isolation(postgres_test):
                         )
                     )
                 ).all()
+                from commerce_identity import models as identity_models  # noqa: F401
+                from commerce_identity.db import Base as IdentityBase
                 from commerce_inventory import models  # noqa: F401
                 from commerce_inventory.db import Base as InventoryBase
 
@@ -263,6 +265,10 @@ def test_postgres_bootstrap_migrations_and_runtime_isolation(postgres_test):
                 expected.update(
                     ("commerce_inventory", name)
                     for name in (table.name for table in InventoryBase.metadata.tables.values())
+                )
+                expected.update(
+                    ("commerce_identity", name)
+                    for name in (table.name for table in IdentityBase.metadata.tables.values())
                 )
                 assert set(tables) == expected
             # Autogenerate must ignore actual tables outside the service, not just version tables.
