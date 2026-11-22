@@ -48,6 +48,7 @@ services:
       HTTP_HOST: 0.0.0.0
       HTTP_PORT: 3000
       CATALOG_BASE_URL: http://catalog-service:3002
+      ORDER_BASE_URL: http://order-service:3004
     ports: [127.0.0.1:3000:3000]
     depends_on:
       catalog-service: {condition: service_healthy}
@@ -91,8 +92,23 @@ services:
       dockerfile: apps/order-service/Dockerfile
     env_file:
       - {path: ./.local/apps/order-service.env, required: false, format: raw}
-    environment: {HTTP_HOST: 0.0.0.0, HTTP_PORT: 3004}
+    environment: {HTTP_HOST: 0.0.0.0, HTTP_PORT: 3004, CATALOG_BASE_URL: "http://catalog-service:3002"}
     ports: [127.0.0.1:3004:3004]
+    depends_on:
+      rabbitmq: {condition: service_healthy}
+
+  order-worker:
+    <<: *backend
+    profiles: [order-workers]
+    build:
+      context: ..
+      dockerfile: apps/order-service/Dockerfile
+    env_file:
+      - {path: ./.local/apps/order-service.env, required: false, format: raw}
+    environment: {HTTP_HOST: 0.0.0.0, HTTP_PORT: 3004, INVENTORY_BASE_URL: "http://inventory-service:3003", PAYMENT_BASE_URL: "http://payment-service:3005"}
+    command: [/opt/venv/bin/python, -m, commerce_order.worker, --run, --mode, all]
+    healthcheck: {disable: true}
+    restart: on-failure
     depends_on:
       rabbitmq: {condition: service_healthy}
 

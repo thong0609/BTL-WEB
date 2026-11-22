@@ -15,8 +15,9 @@ class Settings(ServiceSettings):
     http_port: int = Field(default=3000, ge=1024, le=65535)
 
     catalog_base_url: HttpUrl = HttpUrl("http://127.0.0.1:3002")
+    order_base_url: HttpUrl = HttpUrl("http://127.0.0.1:3004")
 
-    @field_validator("catalog_base_url")
+    @field_validator("catalog_base_url", "order_base_url")
     @classmethod
     def validate_catalog_origin(cls, value: HttpUrl) -> HttpUrl:
         if (

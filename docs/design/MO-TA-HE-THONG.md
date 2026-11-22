@@ -383,7 +383,7 @@ Thông tin đơn, dữ liệu khách tại lúc đặt và trạng thái phản 
 | `completed_at` | timestamptz, NULL | Hoàn tất giao và thu tiền. |
 | `cancelled_at` | timestamptz, NULL | Hoàn tất bù trừ khi hủy. |
 
-CHECK các amount >= 0 và total = subtotal + shipping_fee. Tổng các order_items được kiểm tra trong transaction ứng dụng, không CHECK xuyên bảng. Index (customer_id, created_at), (status, created_at). REJECTED dùng cho chưa tiếp nhận do thiếu hàng; CANCELLED cho đơn kết thúc hủy sau xử lý thanh toán/giữ hàng. Không xóa đơn để làm lại.
+CHECK các amount >= 0 và total = subtotal + shipping_fee. Tổng các order_items được kiểm tra trong transaction ứng dụng, không CHECK xuyên bảng. Triển khai Order Step 4 dùng index (customer_id, created_at, id), (status, created_at, id) và (created_at, id) để phân trang ổn định. REJECTED dùng cho chưa tiếp nhận do thiếu hàng; CANCELLED cho đơn kết thúc hủy sau xử lý thanh toán/giữ hàng. Không xóa đơn để làm lại.
 
 #### F.13. orders_db — order_items
 
@@ -402,7 +402,7 @@ Snapshot cố định của từng dòng mua.
 | `line_total_amount` | bigint | Đơn giá × số lượng. |
 | `created_at` | timestamptz | Thời điểm tạo. |
 
-UQ(order_id, product_id); CHECK quantity > 0, unit_price >= 0, line_total = unit_price × quantity. Không join Catalog để tính lại đơn cũ.
+UQ(order_id, product_id) và UQ(order_id, product_sku); CHECK quantity 1–999 theo giới hạn request hiện tại, catalog_version >= 0, unit_price >= 0, line_total = unit_price × quantity. Không join Catalog để tính lại đơn cũ. Ràng buộc SKU bổ sung ở Order Step 4, khớp kiểm tra snapshot Step 3; không thay schema Catalog.
 
 #### F.14. orders_db — order_status_history
 
@@ -421,7 +421,7 @@ Lịch sử chuyển trạng thái đơn, gồm thao tác người dùng và s�
 | `message_id` | uuid, NULL | Message gây thay đổi nếu có. |
 | `created_at` | timestamptz | Thời điểm. |
 
-Index (order_id, created_at). Append-only, ghi cùng transaction đổi orders.status.
+Index (order_id, created_at, id). Append-only, ghi cùng transaction đổi orders.status. Migration Order Step 4 thêm trigger từ chối UPDATE/DELETE lịch sử ngay tại PostgreSQL, kể cả khi runtime được cấp DML mặc định; trigger/function chỉ thuộc commerce_orders. Chưa áp dụng lên Supabase dev trong bước kiểm chứng local.
 
 #### F.15. orders_db — order_workflows
 
@@ -434,6 +434,7 @@ Một hàng điều phối tồn tại suốt vòng đời đơn, lưu tiến tr
 | `state` | varchar(20) | RUNNING, WAITING, DONE, NEEDS_ATTENTION. |
 | `stock_step` | varchar(30) | NOT_REQUESTED, RESERVE_PENDING, RESERVED, RESERVE_FAILED, RELEASE_PENDING, RELEASED, COMMIT_PENDING, COMMITTED. |
 | `payment_step` | varchar(30) | NOT_REQUESTED, INIT_PENDING, PENDING, COD_READY, PAID, FAILED, CANCEL_PENDING, CANCELLED, REFUND_PENDING, REFUNDED, COLLECT_PENDING. |
+| `reservation_id` | uuid, NULL, tham chiếu ngoài | Bổ sung Order Step 4: lưu reservationId do Inventory trả để giải phóng/xuất/đối chiếu; không FK sang schema Inventory. |
 | `reserve_operation_id` | uuid, NULL | Mã ổn định cho giữ hàng. |
 | `release_operation_id` | uuid, NULL | Mã ổn định cho giải phóng. |
 | `commit_operation_id` | uuid, NULL | Mã ổn định cho xuất hàng. |
@@ -618,6 +619,7 @@ Các bảng sau là đề xuất chi tiết khi viết bộ hợp đồng 0.1. C
 | `order_id` | uuid, FK orders.id | Đơn được tác động |
 | `actor_id` | uuid, tham chiếu ngoài | Người gửi đã xác thực |
 | `action` | varchar(30) | CANCEL, CONFIRM, DISPATCH, COMPLETE, RECORD_EXCEPTION |
+| `request_body` | jsonb, nullable | Input action đã validate để audit lý do/xác nhận; thêm ở migration Order 0003_action_audit, bản ghi cũ giữ NULL |
 | `idempotency_key` | varchar(128) | Key HTTP |
 | `request_hash` | varchar(64) | Hash payload chuẩn hóa |
 | `response_status` | integer | Mã HTTP tiếp nhận |

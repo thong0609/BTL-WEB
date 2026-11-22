@@ -1,0 +1,168 @@
+{
+  "fixtureVersion": 1,
+  "status": "DRAFT_FOR_REVIEW",
+  "note": "Đây là mẫu body/header, không phải server đang chạy. Actor là metadata test, không phải header xác thực. Không có JWT/secret thật.",
+  "examples": [
+    {
+      "name": "quote",
+      "actorKey": "CUSTOMER_A",
+      "method": "POST",
+      "path": "/api/v1/orders/quote",
+      "requestBody": {
+        "items": [
+          {
+            "productId": "10000000-0000-4000-8000-000000000011",
+            "quantity": 2
+          }
+        ]
+      },
+      "expectedHttpStatus": 200,
+      "responseBody": {
+        "items": [
+          {
+            "productId": "10000000-0000-4000-8000-000000000011",
+            "sku": "DEMO-MOUSE",
+            "name": "Chuột thử nghiệm",
+            "quantity": 2,
+            "unitPriceAmount": "200000",
+            "lineTotalAmount": "400000",
+            "catalogVersion": 3
+          }
+        ],
+        "subtotalAmount": "400000",
+        "shippingFeeAmount": "30000",
+        "totalAmount": "430000",
+        "currency": "VND",
+        "quotedAt": "2026-11-07T02:00:00Z"
+      }
+    },
+    {
+      "name": "create_cod",
+      "actorKey": "CUSTOMER_A",
+      "method": "POST",
+      "path": "/api/v1/orders",
+      "headers": {
+        "Idempotency-Key": "step1-cod-create-001"
+      },
+      "requestBody": {
+        "items": [
+          {
+            "productId": "10000000-0000-4000-8000-000000000011",
+            "quantity": 2,
+            "expectedUnitPriceAmount": "200000",
+            "expectedCatalogVersion": 3
+          }
+        ],
+        "expectedShippingFeeAmount": "30000",
+        "recipient": {
+          "name": "Khách thử A",
+          "phone": "0900000001",
+          "address": "Địa chỉ giả lập số 12, khu thử nghiệm, TP Hồ Chí Minh"
+        },
+        "paymentMethod": "COD",
+        "note": "Dữ liệu giả lập Step 1"
+      },
+      "expectedHttpStatus": 202,
+      "responseBody": {
+        "orderId": "10000000-0000-4000-8000-000000000101",
+        "orderNumber": "DEMO-COD-001",
+        "status": "PROCESSING"
+      },
+      "note": "orderNumber chỉ minh họa, chưa chốt định dạng production. Replay cùng key/payload trả cùng response dù trạng thái hiện tại đã tiến triển."
+    },
+    {
+      "name": "create_simulated",
+      "actorKey": "CUSTOMER_A",
+      "method": "POST",
+      "path": "/api/v1/orders",
+      "headers": {
+        "Idempotency-Key": "step1-simulated-create-001"
+      },
+      "requestBody": {
+        "items": [
+          {
+            "productId": "10000000-0000-4000-8000-000000000011",
+            "quantity": 2,
+            "expectedUnitPriceAmount": "200000",
+            "expectedCatalogVersion": 3
+          }
+        ],
+        "expectedShippingFeeAmount": "30000",
+        "recipient": {
+          "name": "Khách thử A",
+          "phone": "0900000001",
+          "address": "Địa chỉ giả lập số 12, khu thử nghiệm, TP Hồ Chí Minh"
+        },
+        "paymentMethod": "SIMULATED",
+        "note": "Dữ liệu giả lập Step 1"
+      },
+      "expectedHttpStatus": 202,
+      "responseBody": {
+        "orderId": "10000000-0000-4000-8000-000000000102",
+        "orderNumber": "DEMO-SIM-001",
+        "status": "PROCESSING"
+      }
+    },
+    {
+      "name": "cancel_paid",
+      "actorKey": "CUSTOMER_A",
+      "method": "POST",
+      "path": "/api/v1/orders/10000000-0000-4000-8000-000000000106/cancel",
+      "headers": {
+        "Idempotency-Key": "step1-cancel-paid-001"
+      },
+      "requestBody": {
+        "reason": "Khách thử yêu cầu hủy trước giao"
+      },
+      "expectedHttpStatus": 202
+    },
+    {
+      "name": "confirm_cod",
+      "actorKey": "ADMIN_A",
+      "method": "POST",
+      "path": "/api/v1/admin/orders/10000000-0000-4000-8000-000000000101/confirm",
+      "headers": {
+        "Idempotency-Key": "step1-confirm-cod-001"
+      },
+      "expectedHttpStatus": 200
+    },
+    {
+      "name": "dispatch_cod",
+      "actorKey": "ADMIN_A",
+      "method": "POST",
+      "path": "/api/v1/admin/orders/10000000-0000-4000-8000-000000000101/dispatch",
+      "headers": {
+        "Idempotency-Key": "step1-dispatch-cod-001"
+      },
+      "expectedHttpStatus": 202
+    },
+    {
+      "name": "complete_cod",
+      "actorKey": "ADMIN_A",
+      "method": "POST",
+      "path": "/api/v1/admin/orders/10000000-0000-4000-8000-000000000101/complete",
+      "headers": {
+        "Idempotency-Key": "step1-complete-cod-001"
+      },
+      "requestBody": {
+        "delivered": true,
+        "codCollected": true
+      },
+      "expectedHttpStatus": 202
+    },
+    {
+      "name": "record_exception",
+      "actorKey": "ADMIN_A",
+      "method": "POST",
+      "path": "/api/v1/admin/orders/10000000-0000-4000-8000-000000000101/exceptions",
+      "headers": {
+        "Idempotency-Key": "step1-exception-cod-001"
+      },
+      "requestBody": {
+        "reason": "Giao thử không thành công, chờ xử lý"
+      },
+      "expectedHttpStatus": 200,
+      "note": "Nhánh thay thế khi đơn SHIPPING, không thực hiện sau complete_cod."
+    }
+  ]
+}

@@ -8,7 +8,7 @@ FROM dependencies AS builder
 COPY apps/web/ ./
 ARG GATEWAY_URL=http://api-gateway:3000
 ENV GATEWAY_URL=$GATEWAY_URL NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+RUN mkdir -p public && npm run build
 
 FROM node:22.19.0-alpine AS runner
 WORKDIR /app

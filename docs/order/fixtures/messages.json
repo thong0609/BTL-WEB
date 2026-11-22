@@ -1,0 +1,728 @@
+{
+  "fixtureVersion": 1,
+  "status": "DRAFT_FOR_REVIEW",
+  "note": "Mẫu độc lập để review shape/routing, KHÔNG phải danh sách phát tuần tự hay script replay. Các ví dụ success/failure cùng operation là nhánh thay thế. Ca REFUND_RETRY là tiến triển nhiều kết quả cùng operation.",
+  "paymentVersionPolicy": "Số version và một số error code chỉ minh họa, chưa được chủ service duyệt.",
+  "preconditions": "Mỗi scenario bắt đầu baseline riêng; ví dụ nằm giữa luồng giả định đã đạt tiền điều kiện mô tả trong step-1.md.",
+  "examples": [
+    {
+      "name": "reserve_stock",
+      "kind": "command",
+      "scenarioKey": "COD_COMPLETE",
+      "exchange": "commerce.commands",
+      "routingKey": "inventory.reserve",
+      "queue": "inventory.commands",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001001",
+        "type": "ReserveStock",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000300",
+        "causationId": null,
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000101",
+          "operationId": "10000000-0000-4000-8000-000000000401",
+          "items": [
+            {
+              "productId": "10000000-0000-4000-8000-000000000011",
+              "quantity": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "stock_reserved",
+      "kind": "event",
+      "scenarioKey": "COD_COMPLETE",
+      "exchange": "commerce.events",
+      "routingKey": "inventory.stock-reserved",
+      "queue": "order.events",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001002",
+        "type": "StockReserved",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000300",
+        "causationId": "10000000-0000-4000-8000-000000001001",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000101",
+          "operationId": "10000000-0000-4000-8000-000000000401",
+          "reservationId": "10000000-0000-4000-8000-000000000501",
+          "items": [
+            {
+              "productId": "10000000-0000-4000-8000-000000000011",
+              "quantity": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "initialize_cod",
+      "kind": "command",
+      "scenarioKey": "COD_COMPLETE",
+      "exchange": "commerce.commands",
+      "routingKey": "payment.initialize-cod",
+      "queue": "payment.commands",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001003",
+        "type": "InitializeCodPayment",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000300",
+        "causationId": "10000000-0000-4000-8000-000000001002",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000101",
+          "operationId": "10000000-0000-4000-8000-000000000402",
+          "customerId": "10000000-0000-4000-8000-000000000001",
+          "amount": "430000",
+          "currency": "VND"
+        }
+      }
+    },
+    {
+      "name": "payment_initialized",
+      "kind": "event",
+      "scenarioKey": "COD_COMPLETE",
+      "exchange": "commerce.events",
+      "routingKey": "payment.initialized",
+      "queue": "order.events",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001004",
+        "type": "PaymentInitialized",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000300",
+        "causationId": "10000000-0000-4000-8000-000000001003",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000101",
+          "operationId": "10000000-0000-4000-8000-000000000402",
+          "paymentId": "10000000-0000-4000-8000-000000000601",
+          "paymentVersion": 1,
+          "paymentStatus": "AWAITING_COLLECTION",
+          "method": "COD",
+          "amount": "430000",
+          "currency": "VND"
+        }
+      },
+      "note": "paymentVersion=1 là số minh họa; cần Payment xác nhận quy tắc phiên bản."
+    },
+    {
+      "name": "commit_stock",
+      "kind": "command",
+      "scenarioKey": "COD_COMPLETE",
+      "exchange": "commerce.commands",
+      "routingKey": "inventory.commit",
+      "queue": "inventory.commands",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001005",
+        "type": "CommitStock",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000300",
+        "causationId": null,
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000101",
+          "operationId": "10000000-0000-4000-8000-000000000403",
+          "reservationId": "10000000-0000-4000-8000-000000000501"
+        }
+      },
+      "note": "Sau thao tác ADMIN dispatch; causationId null vì bắt đầu bước này từ HTTP."
+    },
+    {
+      "name": "stock_committed",
+      "kind": "event",
+      "scenarioKey": "COD_COMPLETE",
+      "exchange": "commerce.events",
+      "routingKey": "inventory.stock-committed",
+      "queue": "order.events",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001006",
+        "type": "StockCommitted",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000300",
+        "causationId": "10000000-0000-4000-8000-000000001005",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000101",
+          "operationId": "10000000-0000-4000-8000-000000000403",
+          "reservationId": "10000000-0000-4000-8000-000000000501"
+        }
+      }
+    },
+    {
+      "name": "stock_commit_failed",
+      "kind": "event",
+      "scenarioKey": "COD_COMPLETE",
+      "exchange": "commerce.events",
+      "routingKey": "inventory.stock-commit-failed",
+      "queue": "order.events",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001007",
+        "type": "StockCommitFailed",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000300",
+        "causationId": "10000000-0000-4000-8000-000000001005",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000101",
+          "operationId": "10000000-0000-4000-8000-000000000403",
+          "reservationId": "10000000-0000-4000-8000-000000000501",
+          "code": "RESERVATION_STATE_CONFLICT"
+        }
+      },
+      "note": "NHÁNH THAY THẾ StockCommitted; code minh họa cần Inventory review, không phát cả hai cho cùng kết quả."
+    },
+    {
+      "name": "record_cod_collection",
+      "kind": "command",
+      "scenarioKey": "COD_COMPLETE",
+      "exchange": "commerce.commands",
+      "routingKey": "payment.collect-cod",
+      "queue": "payment.commands",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001008",
+        "type": "RecordCodCollection",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000300",
+        "causationId": null,
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000101",
+          "operationId": "10000000-0000-4000-8000-000000000404",
+          "paymentId": "10000000-0000-4000-8000-000000000601",
+          "collectedBy": "10000000-0000-4000-8000-000000000003"
+        }
+      }
+    },
+    {
+      "name": "cod_collected",
+      "kind": "event",
+      "scenarioKey": "COD_COMPLETE",
+      "exchange": "commerce.events",
+      "routingKey": "payment.cod-collected",
+      "queue": "order.events",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001009",
+        "type": "CodCollected",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000300",
+        "causationId": "10000000-0000-4000-8000-000000001008",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000101",
+          "operationId": "10000000-0000-4000-8000-000000000404",
+          "paymentId": "10000000-0000-4000-8000-000000000601",
+          "paymentVersion": 2,
+          "paymentStatus": "SUCCEEDED",
+          "amount": "430000",
+          "currency": "VND",
+          "collectedBy": "10000000-0000-4000-8000-000000000003"
+        }
+      }
+    },
+    {
+      "name": "process_payment_reserve",
+      "kind": "command",
+      "scenarioKey": "SIMULATED_SUCCESS",
+      "exchange": "commerce.commands",
+      "routingKey": "inventory.reserve",
+      "queue": "inventory.commands",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001900",
+        "type": "ReserveStock",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000301",
+        "causationId": null,
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000102",
+          "operationId": "10000000-0000-4000-8000-000000001902",
+          "items": [
+            {
+              "productId": "10000000-0000-4000-8000-000000000011",
+              "quantity": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "process_payment_reserved",
+      "kind": "event",
+      "scenarioKey": "SIMULATED_SUCCESS",
+      "exchange": "commerce.events",
+      "routingKey": "inventory.stock-reserved",
+      "queue": "order.events",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001901",
+        "type": "StockReserved",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000301",
+        "causationId": "10000000-0000-4000-8000-000000001900",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000102",
+          "operationId": "10000000-0000-4000-8000-000000001902",
+          "reservationId": "10000000-0000-4000-8000-000000000502",
+          "items": [
+            {
+              "productId": "10000000-0000-4000-8000-000000000011",
+              "quantity": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "process_payment",
+      "kind": "command",
+      "scenarioKey": "SIMULATED_SUCCESS",
+      "exchange": "commerce.commands",
+      "routingKey": "payment.process",
+      "queue": "payment.commands",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001010",
+        "type": "ProcessPayment",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000301",
+        "causationId": "10000000-0000-4000-8000-000000001901",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000102",
+          "operationId": "10000000-0000-4000-8000-000000000412",
+          "customerId": "10000000-0000-4000-8000-000000000001",
+          "amount": "430000",
+          "currency": "VND"
+        }
+      },
+      "note": "Command được tạo sau StockReserved đứng trước trong cùng scenario; giữ liên kết causationId."
+    },
+    {
+      "name": "payment_succeeded",
+      "kind": "event",
+      "scenarioKey": "SIMULATED_SUCCESS",
+      "exchange": "commerce.events",
+      "routingKey": "payment.succeeded",
+      "queue": "order.events",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001011",
+        "type": "PaymentSucceeded",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000301",
+        "causationId": "10000000-0000-4000-8000-000000001010",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000102",
+          "operationId": "10000000-0000-4000-8000-000000000412",
+          "paymentId": "10000000-0000-4000-8000-000000000602",
+          "paymentVersion": 1,
+          "paymentStatus": "SUCCEEDED",
+          "method": "SIMULATED",
+          "amount": "430000",
+          "currency": "VND"
+        }
+      }
+    },
+    {
+      "name": "payment_command_rejected",
+      "kind": "event",
+      "scenarioKey": "SIMULATED_SUCCESS",
+      "exchange": "commerce.events",
+      "routingKey": "payment.command-rejected",
+      "queue": "order.events",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001012",
+        "type": "PaymentCommandRejected",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000301",
+        "causationId": "10000000-0000-4000-8000-000000001010",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000102",
+          "operationId": "10000000-0000-4000-8000-000000000412",
+          "paymentId": null,
+          "paymentVersion": null,
+          "paymentStatus": null,
+          "rejectedType": "ProcessPayment",
+          "code": "OPERATION_CONFLICT"
+        }
+      },
+      "note": "NHÁNH THAY THẾ khi yêu cầu bị từ chối trước khi có payment; code minh họa cần Payment review."
+    },
+    {
+      "name": "failure_process_payment_reserve",
+      "kind": "command",
+      "scenarioKey": "SIMULATED_FAILURE",
+      "exchange": "commerce.commands",
+      "routingKey": "inventory.reserve",
+      "queue": "inventory.commands",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001910",
+        "type": "ReserveStock",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000303",
+        "causationId": null,
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000104",
+          "operationId": "10000000-0000-4000-8000-000000001912",
+          "items": [
+            {
+              "productId": "10000000-0000-4000-8000-000000000011",
+              "quantity": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "failure_process_payment_reserved",
+      "kind": "event",
+      "scenarioKey": "SIMULATED_FAILURE",
+      "exchange": "commerce.events",
+      "routingKey": "inventory.stock-reserved",
+      "queue": "order.events",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001911",
+        "type": "StockReserved",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000303",
+        "causationId": "10000000-0000-4000-8000-000000001910",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000104",
+          "operationId": "10000000-0000-4000-8000-000000001912",
+          "reservationId": "10000000-0000-4000-8000-000000000504",
+          "items": [
+            {
+              "productId": "10000000-0000-4000-8000-000000000011",
+              "quantity": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "failure_process_payment",
+      "kind": "command",
+      "scenarioKey": "SIMULATED_FAILURE",
+      "exchange": "commerce.commands",
+      "routingKey": "payment.process",
+      "queue": "payment.commands",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001013",
+        "type": "ProcessPayment",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000303",
+        "causationId": "10000000-0000-4000-8000-000000001911",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000104",
+          "operationId": "10000000-0000-4000-8000-000000000422",
+          "customerId": "10000000-0000-4000-8000-000000000001",
+          "amount": "430000",
+          "currency": "VND"
+        }
+      },
+      "note": "Command được tạo sau StockReserved đứng trước trong cùng scenario; giữ liên kết causationId."
+    },
+    {
+      "name": "payment_failed",
+      "kind": "event",
+      "scenarioKey": "SIMULATED_FAILURE",
+      "exchange": "commerce.events",
+      "routingKey": "payment.failed",
+      "queue": "order.events",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001014",
+        "type": "PaymentFailed",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000303",
+        "causationId": "10000000-0000-4000-8000-000000001013",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000104",
+          "operationId": "10000000-0000-4000-8000-000000000422",
+          "paymentId": "10000000-0000-4000-8000-000000000604",
+          "paymentVersion": 1,
+          "paymentStatus": "FAILED",
+          "amount": "430000",
+          "currency": "VND",
+          "code": "SIMULATED_DECLINE"
+        }
+      },
+      "note": "code là ví dụ cần Payment review, không dùng cho timeout."
+    },
+    {
+      "name": "no_stock_reserve",
+      "kind": "command",
+      "scenarioKey": "INSUFFICIENT_STOCK",
+      "exchange": "commerce.commands",
+      "routingKey": "inventory.reserve",
+      "queue": "inventory.commands",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001015",
+        "type": "ReserveStock",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000302",
+        "causationId": null,
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000103",
+          "operationId": "10000000-0000-4000-8000-000000000431",
+          "items": [
+            {
+              "productId": "10000000-0000-4000-8000-000000000013",
+              "quantity": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "stock_reservation_failed",
+      "kind": "event",
+      "scenarioKey": "INSUFFICIENT_STOCK",
+      "exchange": "commerce.events",
+      "routingKey": "inventory.stock-reservation-failed",
+      "queue": "order.events",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001016",
+        "type": "StockReservationFailed",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000302",
+        "causationId": "10000000-0000-4000-8000-000000001015",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000103",
+          "operationId": "10000000-0000-4000-8000-000000000431",
+          "code": "INSUFFICIENT_STOCK",
+          "shortages": [
+            {
+              "productId": "10000000-0000-4000-8000-000000000013",
+              "requested": 2,
+              "available": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "release_stock",
+      "kind": "command",
+      "scenarioKey": "CANCEL_PAID",
+      "exchange": "commerce.commands",
+      "routingKey": "inventory.release",
+      "queue": "inventory.commands",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001017",
+        "type": "ReleaseStock",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000305",
+        "causationId": null,
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000106",
+          "operationId": "10000000-0000-4000-8000-000000000441",
+          "reservationId": "10000000-0000-4000-8000-000000000506",
+          "reason": "Khách thử yêu cầu hủy trước giao"
+        }
+      }
+    },
+    {
+      "name": "stock_released",
+      "kind": "event",
+      "scenarioKey": "CANCEL_PAID",
+      "exchange": "commerce.events",
+      "routingKey": "inventory.stock-released",
+      "queue": "order.events",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001018",
+        "type": "StockReleased",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000305",
+        "causationId": "10000000-0000-4000-8000-000000001017",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000106",
+          "operationId": "10000000-0000-4000-8000-000000000441",
+          "reservationId": "10000000-0000-4000-8000-000000000506"
+        }
+      }
+    },
+    {
+      "name": "stock_release_failed",
+      "kind": "event",
+      "scenarioKey": "CANCEL_PAID",
+      "exchange": "commerce.events",
+      "routingKey": "inventory.stock-release-failed",
+      "queue": "order.events",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001019",
+        "type": "StockReleaseFailed",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000305",
+        "causationId": "10000000-0000-4000-8000-000000001017",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000106",
+          "operationId": "10000000-0000-4000-8000-000000000441",
+          "reservationId": "10000000-0000-4000-8000-000000000506",
+          "code": "RESERVATION_STATE_CONFLICT"
+        }
+      },
+      "note": "NHÁNH THAY THẾ StockReleased; code minh họa cần Inventory review."
+    },
+    {
+      "name": "refund_payment",
+      "kind": "command",
+      "scenarioKey": "CANCEL_PAID",
+      "exchange": "commerce.commands",
+      "routingKey": "payment.refund",
+      "queue": "payment.commands",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001020",
+        "type": "RefundPayment",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000305",
+        "causationId": null,
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000106",
+          "operationId": "10000000-0000-4000-8000-000000000442",
+          "paymentId": "10000000-0000-4000-8000-000000000606",
+          "amount": "430000",
+          "currency": "VND",
+          "reason": "Khách thử yêu cầu hủy trước giao"
+        }
+      }
+    },
+    {
+      "name": "payment_refunded",
+      "kind": "event",
+      "scenarioKey": "CANCEL_PAID",
+      "exchange": "commerce.events",
+      "routingKey": "payment.refunded",
+      "queue": "order.events",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001021",
+        "type": "PaymentRefunded",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000305",
+        "causationId": "10000000-0000-4000-8000-000000001020",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000106",
+          "operationId": "10000000-0000-4000-8000-000000000442",
+          "paymentId": "10000000-0000-4000-8000-000000000606",
+          "paymentVersion": 3,
+          "paymentStatus": "REFUNDED",
+          "refundId": "10000000-0000-4000-8000-000000000706",
+          "amount": "430000",
+          "currency": "VND"
+        }
+      }
+    },
+    {
+      "name": "refund_retry_payment",
+      "kind": "command",
+      "scenarioKey": "REFUND_RETRY",
+      "exchange": "commerce.commands",
+      "routingKey": "payment.refund",
+      "queue": "payment.commands",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001022",
+        "type": "RefundPayment",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000306",
+        "causationId": null,
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000107",
+          "operationId": "10000000-0000-4000-8000-000000000452",
+          "paymentId": "10000000-0000-4000-8000-000000000607",
+          "amount": "430000",
+          "currency": "VND",
+          "reason": "Khách thử yêu cầu hủy trước giao"
+        }
+      }
+    },
+    {
+      "name": "payment_refund_failed",
+      "kind": "event",
+      "scenarioKey": "REFUND_RETRY",
+      "exchange": "commerce.events",
+      "routingKey": "payment.refund-failed",
+      "queue": "order.events",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001023",
+        "type": "PaymentRefundFailed",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000306",
+        "causationId": "10000000-0000-4000-8000-000000001022",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000107",
+          "operationId": "10000000-0000-4000-8000-000000000452",
+          "paymentId": "10000000-0000-4000-8000-000000000607",
+          "paymentVersion": 2,
+          "paymentStatus": "REFUND_PENDING",
+          "refundId": "10000000-0000-4000-8000-000000000707",
+          "code": "SIMULATED_REFUND_RETRY",
+          "retryable": true
+        }
+      },
+      "note": "Lần thử sau giữ operationId/refundId, event kết quả mới có messageId riêng. Quy tắc version cần Payment review."
+    },
+    {
+      "name": "cancel_cod_payment",
+      "kind": "command",
+      "scenarioKey": "CANCEL_COD",
+      "exchange": "commerce.commands",
+      "routingKey": "payment.cancel-cod",
+      "queue": "payment.commands",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001024",
+        "type": "CancelCodPayment",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000307",
+        "causationId": null,
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000108",
+          "operationId": "10000000-0000-4000-8000-000000000462",
+          "paymentId": "10000000-0000-4000-8000-000000000608",
+          "reason": "Khách thử yêu cầu hủy trước giao"
+        }
+      },
+      "note": "Tiền điều kiện: đã tạo COD và đang chờ thu; nhánh kho cũng phải được giải phóng trước khi Order CANCELLED."
+    },
+    {
+      "name": "cod_payment_cancelled",
+      "kind": "event",
+      "scenarioKey": "CANCEL_COD",
+      "exchange": "commerce.events",
+      "routingKey": "payment.cod-cancelled",
+      "queue": "order.events",
+      "envelope": {
+        "messageId": "10000000-0000-4000-8000-000000001025",
+        "type": "CodPaymentCancelled",
+        "version": 1,
+        "correlationId": "10000000-0000-4000-8000-000000000307",
+        "causationId": "10000000-0000-4000-8000-000000001024",
+        "occurredAt": "2026-11-07T02:00:00Z",
+        "payload": {
+          "orderId": "10000000-0000-4000-8000-000000000108",
+          "operationId": "10000000-0000-4000-8000-000000000462",
+          "paymentId": "10000000-0000-4000-8000-000000000608",
+          "paymentVersion": 2,
+          "paymentStatus": "CANCELLED",
+          "amount": "430000",
+          "currency": "VND"
+        }
+      }
+    }
+  ]
+}

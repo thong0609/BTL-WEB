@@ -1,0 +1,299 @@
+{
+  "fixtureVersion": 1,
+  "status": "DRAFT_FOR_REVIEW",
+  "purpose": "Dữ liệu minh họa Step 1, chưa seed/chạy vào DB hoặc broker.",
+  "isolation": "Mỗi scenario bắt đầu từ baseline riêng. Các số tồn kỳ vọng không cộng dồn giữa scenario.",
+  "createdAt": "2026-11-07T02:00:00Z",
+  "actors": [
+    {
+      "key": "CUSTOMER_A",
+      "id": "10000000-0000-4000-8000-000000000001",
+      "role": "CUSTOMER",
+      "status": "ACTIVE",
+      "name": "Khách thử A"
+    },
+    {
+      "key": "CUSTOMER_B",
+      "id": "10000000-0000-4000-8000-000000000002",
+      "role": "CUSTOMER",
+      "status": "ACTIVE",
+      "name": "Khách thử B"
+    },
+    {
+      "key": "ADMIN_A",
+      "id": "10000000-0000-4000-8000-000000000003",
+      "role": "ADMIN",
+      "status": "ACTIVE",
+      "name": "Quản trị thử A"
+    }
+  ],
+  "products": [
+    {
+      "key": "PROD_MOUSE",
+      "id": "10000000-0000-4000-8000-000000000011",
+      "sku": "DEMO-MOUSE",
+      "name": "Chuột thử nghiệm",
+      "status": "ACTIVE",
+      "unitPriceAmount": "200000",
+      "currency": "VND",
+      "catalogVersion": 3,
+      "inventory": {
+        "onHand": 10,
+        "reserved": 0
+      }
+    },
+    {
+      "key": "PROD_LAST",
+      "id": "10000000-0000-4000-8000-000000000012",
+      "sku": "DEMO-LAST",
+      "name": "Hàng còn một",
+      "status": "ACTIVE",
+      "unitPriceAmount": "100000",
+      "currency": "VND",
+      "catalogVersion": 1,
+      "inventory": {
+        "onHand": 1,
+        "reserved": 0
+      }
+    },
+    {
+      "key": "PROD_ZERO",
+      "id": "10000000-0000-4000-8000-000000000013",
+      "sku": "DEMO-ZERO",
+      "name": "Hàng hết tồn",
+      "status": "ACTIVE",
+      "unitPriceAmount": "200000",
+      "currency": "VND",
+      "catalogVersion": 1,
+      "inventory": {
+        "onHand": 0,
+        "reserved": 0
+      }
+    },
+    {
+      "key": "PROD_DRAFT",
+      "id": "10000000-0000-4000-8000-000000000014",
+      "sku": "DEMO-DRAFT",
+      "name": "Hàng chưa bán",
+      "status": "DRAFT",
+      "unitPriceAmount": "200000",
+      "currency": "VND",
+      "catalogVersion": 1,
+      "inventory": {
+        "onHand": 10,
+        "reserved": 0
+      }
+    }
+  ],
+  "configuration": {
+    "shippingFeeAmount": "30000",
+    "currency": "VND",
+    "note": "Phí ship chỉ là fixture test, chưa phải phí thật đã chốt."
+  },
+  "recipient": {
+    "name": "Khách thử A",
+    "phone": "0900000001",
+    "address": "Địa chỉ giả lập số 12, khu thử nghiệm, TP Hồ Chí Minh"
+  },
+  "scenarios": [
+    {
+      "key": "COD_COMPLETE",
+      "orderId": "10000000-0000-4000-8000-000000000101",
+      "method": "COD",
+      "productKey": "PROD_MOUSE",
+      "quantity": 2,
+      "paymentScenario": null,
+      "at": [
+        "AT-05",
+        "AT-13",
+        "AT-14"
+      ],
+      "expected": {
+        "orderPath": [
+          "PROCESSING",
+          "AWAITING_CONFIRMATION",
+          "PREPARING",
+          "SHIPPING",
+          "COMPLETED"
+        ],
+        "paymentStatus": "SUCCEEDED",
+        "reservationStatus": "COMMITTED",
+        "onHand": 8,
+        "reserved": 0,
+        "totalAmount": "430000"
+      }
+    },
+    {
+      "key": "SIMULATED_SUCCESS",
+      "orderId": "10000000-0000-4000-8000-000000000102",
+      "method": "SIMULATED",
+      "productKey": "PROD_MOUSE",
+      "quantity": 2,
+      "paymentScenario": "SUCCESS",
+      "at": [
+        "AT-06"
+      ],
+      "expected": {
+        "orderPath": [
+          "PROCESSING",
+          "AWAITING_CONFIRMATION"
+        ],
+        "paymentStatus": "SUCCEEDED",
+        "reservationStatus": "RESERVED",
+        "onHand": 10,
+        "reserved": 2,
+        "totalAmount": "430000"
+      }
+    },
+    {
+      "key": "INSUFFICIENT_STOCK",
+      "orderId": "10000000-0000-4000-8000-000000000103",
+      "method": "COD",
+      "productKey": "PROD_ZERO",
+      "quantity": 2,
+      "paymentScenario": null,
+      "at": [
+        "AT-16",
+        "AT-17"
+      ],
+      "expected": {
+        "orderPath": [
+          "PROCESSING",
+          "REJECTED"
+        ],
+        "paymentStatus": null,
+        "reservationStatus": null,
+        "onHand": 0,
+        "reserved": 0,
+        "paymentCommands": 0,
+        "totalAmount": "430000"
+      }
+    },
+    {
+      "key": "SIMULATED_FAILURE",
+      "orderId": "10000000-0000-4000-8000-000000000104",
+      "method": "SIMULATED",
+      "productKey": "PROD_MOUSE",
+      "quantity": 2,
+      "paymentScenario": "FAILURE",
+      "at": [
+        "AT-06"
+      ],
+      "expected": {
+        "orderPath": [
+          "PROCESSING",
+          "CANCELLING",
+          "CANCELLED"
+        ],
+        "paymentStatus": "FAILED",
+        "reservationStatus": "RELEASED",
+        "onHand": 10,
+        "reserved": 0,
+        "refundCommands": 0,
+        "totalAmount": "430000"
+      }
+    },
+    {
+      "key": "SIMULATED_DELAYED",
+      "orderId": "10000000-0000-4000-8000-000000000105",
+      "method": "SIMULATED",
+      "productKey": "PROD_MOUSE",
+      "quantity": 2,
+      "paymentScenario": "DELAYED_SUCCESS",
+      "at": [
+        "AT-06",
+        "AT-20"
+      ],
+      "expected": {
+        "orderPath": [
+          "PROCESSING"
+        ],
+        "paymentStatusFromPayment": "PENDING",
+        "publicPaymentStatusBeforeAnyConfirmedPaymentSnapshot": null,
+        "reservationStatus": "RESERVED",
+        "onHand": 10,
+        "reserved": 2,
+        "releaseCommandsBeforeKnownFailure": 0,
+        "totalAmount": "430000"
+      },
+      "checkpoint": "Kiểm tra trước khi Payment kết thúc độ trễ. PENDING chỉ phản chiếu sau bằng chứng hợp lệ từ Payment."
+    },
+    {
+      "key": "CANCEL_PAID",
+      "orderId": "10000000-0000-4000-8000-000000000106",
+      "method": "SIMULATED",
+      "productKey": "PROD_MOUSE",
+      "quantity": 2,
+      "paymentScenario": "SUCCESS",
+      "refundScenario": "SUCCESS",
+      "at": [
+        "AT-08"
+      ],
+      "expected": {
+        "orderPath": [
+          "PROCESSING",
+          "AWAITING_CONFIRMATION",
+          "CANCELLING",
+          "CANCELLED"
+        ],
+        "paymentStatus": "REFUNDED",
+        "reservationStatus": "RELEASED",
+        "refundAmount": "430000",
+        "onHand": 10,
+        "reserved": 0
+      }
+    },
+    {
+      "key": "REFUND_RETRY",
+      "orderId": "10000000-0000-4000-8000-000000000107",
+      "method": "SIMULATED",
+      "productKey": "PROD_MOUSE",
+      "quantity": 2,
+      "paymentScenario": "SUCCESS",
+      "refundScenario": "FAIL_UNTIL_RETRY",
+      "at": [
+        "AT-09",
+        "AT-22"
+      ],
+      "expectedAfterFailure": {
+        "orderStatus": "CANCELLING",
+        "paymentStatus": "REFUND_PENDING",
+        "reservationStatus": "RELEASED",
+        "onHand": 10,
+        "reserved": 0
+      },
+      "expectedAfterRetry": {
+        "orderStatus": "CANCELLED",
+        "paymentStatus": "REFUNDED",
+        "refundCount": 1,
+        "refundAmount": "430000",
+        "onHand": 10,
+        "reserved": 0
+      }
+    },
+    {
+      "key": "CANCEL_COD",
+      "orderId": "10000000-0000-4000-8000-000000000108",
+      "method": "COD",
+      "productKey": "PROD_MOUSE",
+      "quantity": 2,
+      "paymentScenario": null,
+      "at": [
+        "AT-07"
+      ],
+      "expected": {
+        "orderPath": [
+          "PROCESSING",
+          "AWAITING_CONFIRMATION",
+          "CANCELLING",
+          "CANCELLED"
+        ],
+        "paymentStatus": "CANCELLED",
+        "reservationStatus": "RELEASED",
+        "onHand": 10,
+        "reserved": 0,
+        "refundCommands": 0
+      }
+    }
+  ]
+}

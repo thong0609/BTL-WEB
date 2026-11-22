@@ -31,12 +31,25 @@ MESSAGING = {"inventory-service", "order-service", "payment-service"}
 
 def clean_test_env() -> dict[str, str]:
     """Do not inherit credential-bearing settings from a developer shell."""
-    blocked = ("DATABASE_", "MIGRATION_", "DB_", "BROKER_", "BOOTSTRAP_", "SUPABASE_")
+    blocked = (
+        "DATABASE_",
+        "MIGRATION_",
+        "DB_",
+        "BROKER_",
+        "BOOTSTRAP_",
+        "SUPABASE_",
+        "ORDER_",
+        "INVENTORY_",
+        "PAYMENT_",
+    )
     names = {
         "SERVICE_NAME",
         "HTTP_PORT",
         "HTTP_HOST",
         "CATALOG_BASE_URL",
+        "ORDER_BASE_URL",
+        "CATALOG_SERVICE_TOKEN",
+        "SHIPPING_FEE_AMOUNT",
         "CORS_ORIGINS",
         "HTTP_TIMEOUT_SECONDS",
         "HTTP_MAX_CONNECTIONS",

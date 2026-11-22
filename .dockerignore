@@ -9,6 +9,8 @@
 **/.ruff_cache
 **/uploads
 **/*.log
+**/test-results
+**/playwright-report
 .git
 docs
 plans

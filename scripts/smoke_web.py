@@ -73,7 +73,12 @@ def main() -> None:
     node = shutil.which("node")
     if node is None:
         raise SystemExit("Node.js is required")
-    catalog_port, gateway_port, web_port = free_port(), free_port(), free_port()
+    catalog_port, gateway_port, web_port, order_port = (
+        free_port(),
+        free_port(),
+        free_port(),
+        free_port(),
+    )
     env = {
         **os.environ,
         "APP_ENV": "test",
@@ -81,6 +86,7 @@ def main() -> None:
         "BROKER_ENABLED": "false",
         "HTTP_HOST": "127.0.0.1",
         "CATALOG_BASE_URL": f"http://127.0.0.1:{catalog_port}",
+        "ORDER_BASE_URL": f"http://127.0.0.1:{order_port}",
         "GATEWAY_URL": f"http://127.0.0.1:{gateway_port}",
         "NEXT_TELEMETRY_DISABLED": "1",
     }
@@ -104,6 +110,10 @@ def main() -> None:
                 [sys.executable, "-m", "commerce_catalog"], ROOT, {"HTTP_PORT": str(catalog_port)}
             )
             wait_ready(f"http://127.0.0.1:{catalog_port}/health/live", catalog)
+            order = launch(
+                [sys.executable, "-m", "commerce_order"], ROOT, {"HTTP_PORT": str(order_port)}
+            )
+            wait_ready(f"http://127.0.0.1:{order_port}/health/live", order)
             gateway = launch(
                 [sys.executable, str(ROOT / "tests/fixtures/web_gateway.py")],
                 ROOT,
@@ -128,6 +138,15 @@ def main() -> None:
             wait_ready(base, web)
             status, _, page = request(base)
             assert status == 200 and "Kiểm tra kết nối hệ thống" in page.decode()
+            for path in ("/checkout", "/orders", "/admin/orders"):
+                status, _, body = request(base + path)
+                assert status == 200 and "Đăng nhập để tiếp tục" in body.decode()
+            status, _, body = request(base + "/api/v1/orders")
+            assert status == 401 and json.loads(body)["code"] == "AUTH_INVALID"
+            status, _, body = request(
+                base + "/api/v1/orders", {"Authorization": "Bearer smoke-only-unverified"}
+            )
+            assert status == 503 and json.loads(body)["code"] == "AUTH_UNAVAILABLE"
             request_id = str(uuid4())
             status, headers, body = request(
                 base + "/api/v1/health/catalog", {"X-Request-Id": request_id}
@@ -156,8 +175,8 @@ def main() -> None:
             stop(gateway)
             assert request(base + "/api/v1/health/catalog")[0] >= 500
             print(
-                "PASS: page, real Catalog/gateway chain, cookie/header/query forwarding, "
-                "Set-Cookie, Catalog/gateway outages"
+                "PASS: Order pages, real Next/gateway/Order 401/503 auth boundary, "
+                "Catalog chain, cookie/header/query forwarding, Set-Cookie, dependency outages"
             )
         except BaseException:
             logs.seek(0)

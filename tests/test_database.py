@@ -256,7 +256,15 @@ def test_postgres_bootstrap_migrations_and_runtime_isolation(postgres_test):
                         )
                     )
                 ).all()
-                assert set(tables) == {(s.schema, "alembic_version") for s in DATABASE_SPECS}
+                from commerce_order import models as order_models
+                from commerce_order.db import Base as OrderBase
+
+                assert order_models.OrderRecord.__table__.schema == "commerce_orders"
+                expected = {(s.schema, "alembic_version") for s in DATABASE_SPECS}
+                expected.update(
+                    (table.schema, table.name) for table in OrderBase.metadata.tables.values()
+                )
+                assert set(tables) == expected
             # Autogenerate must ignore actual tables outside the service, not just version tables.
             async with admin.begin() as connection:
                 await connection.execute(text("CREATE TABLE public.unrelated_probe (id integer)"))

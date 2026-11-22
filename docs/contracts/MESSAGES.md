@@ -82,3 +82,11 @@ Version schema thay đổi tương thích: chỉ thêm field tùy chọn, consum
 ## 6. Test contract tối thiểu
 
 Producer tạo fixture cho mỗi type; consumer validate envelope, required fields, số tiền, enum, quantity và unknown version. Test message trùng, cùng operationId khác messageId, payload khác trên cùng operationId, event version cũ, event đến muộn và replay từ DLQ. Fixtures phải dùng ID cố định dễ đối chiếu, không dùng dữ liệu người thật.
+
+## 7. Triển khai retry của Order (Step 9)
+
+Order khai báo exchange direct durable `commerce.order.retry` và các quorum queue `order.events.retry.<milliseconds>`, mặc định 1000/5000/30000. Các queue có TTL, dead-letter qua default exchange về `order.events`, `x-dead-letter-strategy=at-least-once` và `x-overflow=reject-publish`. Không đổi arguments hoặc binding hiện có của `order.events`.
+
+Lỗi kỹ thuật rollback inbox/nghiệp vụ rồi publish bản retry persistent có confirms và mandatory routing. ACK bản gốc sau confirm; body/messageId/correlation/type/timestamp giữ nguyên. Header `x-order-retry-count` tăng và `x-order-original-routing-key` giữ route để validate khi quay lại queue chính. Khi republish, bỏ header lịch sử dead-letter do broker quản lý để không bị nhận nhầm là vòng lặp TTL; số lần thử vẫn bị giới hạn bằng counter riêng.
+
+Message sai/schema version chưa hỗ trợ hoặc hết lượt thử được publish có confirms tới `commerce.dead` / `order.events.dead`, có `x-order-dead-reason`, rồi mới ACK bản gốc. Nếu lưu retry/DLQ chưa được xác nhận thì không ACK; kết nối đóng sẽ cho phép nhận lại. Có thể nhận bản trùng khi mất confirm nên inbox vẫn bắt buộc. Xem [hướng dẫn Step 9](../order/step-9.md); đây là retry do Order sở hữu, không thay quy tắc event của producer.

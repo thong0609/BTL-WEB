@@ -4,6 +4,7 @@ from collections.abc import Mapping
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from pydantic import JsonValue
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
@@ -24,10 +25,18 @@ def error_response(
 
 
 class ServiceError(Exception):
-    def __init__(self, status: int, code: str, public_message: str) -> None:
+    def __init__(
+        self,
+        status: int,
+        code: str,
+        public_message: str,
+        *,
+        details: dict[str, JsonValue] | None = None,
+    ) -> None:
         self.status = status
         self.code = code
         self.public_message = public_message
+        self.details = details
         super().__init__(code)
 
 
@@ -62,7 +71,9 @@ def register_error_handlers(app: FastAPI) -> None:
         )
 
     async def service_error(request: Request, exc: ServiceError) -> JSONResponse:
-        return error_response(request.state.request_id, exc.status, exc.code, exc.public_message)
+        return error_response(
+            request.state.request_id, exc.status, exc.code, exc.public_message, details=exc.details
+        )
 
     app.add_exception_handler(RequestValidationError, validation_error)  # type: ignore[arg-type]
     app.add_exception_handler(HTTPException, http_error)  # type: ignore[arg-type]

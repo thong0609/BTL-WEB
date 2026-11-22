@@ -11,6 +11,9 @@ import pytest
 @pytest.fixture(autouse=True)
 def isolated_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("APP_ENV", "test")
+    for name in list(os.environ):
+        if name.upper().startswith(("ORDER_", "INVENTORY_", "PAYMENT_")):
+            monkeypatch.delenv(name, raising=False)
     for name in (
         "DATABASE_URL",
         "MIGRATION_DATABASE_URL",
@@ -25,6 +28,9 @@ def isolated_env(monkeypatch: pytest.MonkeyPatch) -> None:
         "HTTP_PORT",
         "HTTP_HOST",
         "CATALOG_BASE_URL",
+        "ORDER_BASE_URL",
+        "CATALOG_SERVICE_TOKEN",
+        "SHIPPING_FEE_AMOUNT",
         "CORS_ORIGINS",
         "HTTP_TIMEOUT_SECONDS",
         "HTTP_MAX_CONNECTIONS",
@@ -110,7 +116,13 @@ def postgres_test(request):
         for prefix in ("IDENTITY", "CATALOG", "INVENTORY", "ORDER", "PAYMENT"):
             for kind in ("RUNTIME", "MIGRATOR"):
                 env[f"{prefix}_{kind}_PASSWORD"] = role_password
-        yield {"admin_url": admin_url, "password": role_password, "port": port, "env": env}
+        yield {
+            "admin_url": admin_url,
+            "password": role_password,
+            "port": port,
+            "env": env,
+            "container": container,
+        }
     finally:
         subprocess.run(["docker", "stop", container], capture_output=True, timeout=30, check=False)
 

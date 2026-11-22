@@ -12,3 +12,14 @@ body {
 button { cursor: pointer; }
 button:disabled { cursor: wait; }
 button:focus-visible, a:focus-visible { outline: 3px solid #0284c7; outline-offset: 4px; }
+
+@layer components {
+  .order-main { @apply mx-auto max-w-6xl px-6 py-10; }
+  .order-title { @apply mb-8 text-3xl font-semibold tracking-tight; }
+  .order-card { @apply rounded-2xl border border-slate-200 bg-white p-6 shadow-sm; }
+  .order-label { @apply block text-sm font-medium text-slate-700; }
+  .order-input { @apply mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 focus:border-teal-600 focus:outline-2 focus:outline-teal-600 disabled:bg-slate-100; }
+  .order-button { @apply rounded-lg bg-teal-800 px-5 py-3 text-sm font-semibold text-white hover:bg-teal-900 disabled:cursor-not-allowed disabled:opacity-50; }
+  .order-secondary { @apply rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50; }
+  .order-error { @apply rounded-lg border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-900; }
+}

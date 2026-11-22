@@ -6,10 +6,11 @@ Tài liệu được xếp theo mục đích sử dụng. [README dự án](../R
 | --- | --- | --- |
 | `product/` | Sản phẩm và yêu cầu nghiệp vụ | [Website](product/MO-TA-WEBSITE.md), [use case](product/DAC-TA-NGHIEP-VU.md) |
 | `design/` | Thiết kế hệ thống, database, giao diện và luồng | [Hệ thống/DB](design/MO-TA-HE-THONG.md), [giao diện](design/THIET-KE-GIAO-DIEN.md), [workflow](design/THIET-KE-LUONG-XU-LY.md) |
-| `contracts/` | Hợp đồng giao tiếp | [HTTP](contracts/HTTP-API.md), [OpenAPI](contracts/openapi.yaml), [message](contracts/MESSAGES.md) |
+| `contracts/` | Hợp đồng giao tiếp | [HTTP](contracts/HTTP-API.md), [OpenAPI](contracts/openapi.yaml), [message](contracts/MESSAGES.md), [Catalog internal dự thảo](contracts/catalog-internal.openapi.yaml), [Recovery dự thảo](contracts/order-recovery.openapi.yaml) |
 | `development/` | Hướng dẫn phát triển và kết quả setup | [Hướng dẫn](development/HUONG-DAN-PHAT-TRIEN.md), [bước 1](development/SETUP-STEP-1.md), [bước 2](development/SETUP-STEP-2.md), [bước 3](development/SETUP-STEP-3.md), [bước 4](development/SETUP-STEP-4.md), [bước 5](development/SETUP-STEP-5.md), [bước 6](development/SETUP-STEP-6.md) |
 | `infrastructure/` | Môi trường và cấu hình hạ tầng | [Supabase dev](infrastructure/PHUONG-AN-SUPABASE.md) |
 | `project/` | Kế hoạch và cách phối hợp nhóm | [Kế hoạch thực hiện](project/KE-HOACH-THUC-HIEN.md) |
+| `order/` | Kế hoạch và kết quả Order Service của Mạnh | [Plan](order/plan.md), bước [1](order/step-1.md), [2](order/step-2.md), [3](order/step-3.md), [4](order/step-4.md), [5](order/step-5.md), [6](order/step-6.md), [7](order/step-7.md), [8](order/step-8.md), [9](order/step-9.md), [10](order/step-10.md), [11](order/step-11.md), [12](order/step-12.md), [13](order/step-13.md), [14](order/step-14.md), [15](order/step-15.md), [16](order/step-16.md); [runbook](order/runbook.md), [frontend](order/frontend-handoff.md), [demo](order/demo.md), [test-results](order/test-results.md) |
 | `testing/` | Kiểm thử và nghiệm thu | [Kế hoạch kiểm thử](testing/KE-HOACH-KIEM-THU.md) |
 | `decisions/` | Quyết định và lý do thiết kế | [Nhật ký quyết định](decisions/CAC-QUYET-DINH-THIET-KE.md) |
 

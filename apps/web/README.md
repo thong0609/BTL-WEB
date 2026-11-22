@@ -1,6 +1,6 @@
 # Frontend — Next.js + TypeScript
 
-App Router và Tailwind CSS. Trang `/` kiểm tra frontend → gateway → Catalog bằng nút bấm, có trạng thái chờ, thành công và lỗi. Chưa có giao diện mua hàng hoặc đăng nhập.
+App Router và Tailwind CSS. Trang `/` kiểm tra frontend → gateway → Catalog bằng nút bấm. Đã có `/checkout`, `/orders`, `/orders/[id]`, `/admin/orders`, `/admin/orders/[id]` cho Order; có form dùng contract login/refresh/logout. Identity, routing auth Gateway, verifier Order và giỏ hàng Catalog còn chờ ghép thật; không có phiên giả để bỏ qua auth.
 
 Từ thư mục gốc repository:
 
@@ -41,7 +41,9 @@ uv run --locked --all-packages python scripts/smoke_web.py
 
 `src/lib/api-client.ts` dành cho Client Components: base `/api/v1`, timeout mặc định 8 giây, Error envelope/request ID, cookie cùng origin, không cache/retry tự động. Caller truyền header/body/signal qua options; với JSON body, tự đặt `Content-Type: application/json` và `JSON.stringify`. Generic TypeScript không thay thế validation runtime; `health.ts` kiểm tra response dùng bởi trang này.
 
-Layout/page là Server Components; nút kiểm tra là Client Component. Chưa cần TanStack Query vì không có cache truy vấn hoặc polling. Không cache dùng chung dữ liệu tài khoản/đơn.
+Layout/page là Server Components; form/đơn hàng là Client Components. Trang chi tiết Order polling có hủy request khi rời trang, không cache dùng chung dữ liệu tài khoản/đơn. Token chỉ giữ trong RAM; pending POST giữ body/key trong sessionStorage của tab để retry an toàn sau reload, rồi xóa khi có kết quả xác định/logout.
+
+Ghép giỏ hàng/auth, ví dụ API và quy tắc PRICE_CHANGED: [bàn giao frontend](../../docs/order/frontend-handoff.md). Test trình duyệt: `npm.cmd --prefix apps/web run test:e2e` từ root sau khi cài Chromium theo hướng dẫn đó; các API mẫu chỉ tồn tại trong test. [Kết quả Order](../../docs/order/test-results.md) ghi rõ phạm vi độc lập và tích hợp chưa chạy.
 
 Dockerfile dùng Node server standalone, build context là root repository:
 

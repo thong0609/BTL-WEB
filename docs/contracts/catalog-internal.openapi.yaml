@@ -1,0 +1,71 @@
+openapi: 3.1.0
+info:
+  title: Catalog internal batch — Order integration draft
+  version: 0.1.0-draft
+  description: >-
+    PROPOSED shape/auth for the existing internal batch route. Used by Order's
+    adapter and tests; Catalog handler/auth are not implemented or accepted by
+    the producer merely because this file exists. Never expose this route via Gateway.
+paths:
+  /internal/products/batch:
+    post:
+      operationId: internalProductsBatch
+      security:
+        - serviceBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [productIds]
+              properties:
+                productIds:
+                  type: array
+                  minItems: 1
+                  maxItems: 50
+                  uniqueItems: true
+                  items: {type: string, format: uuid}
+      responses:
+        '200':
+          description: >-
+            Found products, in any order. Omit missing IDs. No duplicate or
+            unrequested IDs. Includes status for the trusted Order caller;
+            Order must not expose inactive product information to customers.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    maxItems: 50
+                    items: {$ref: '#/components/schemas/BatchProduct'}
+        '400': {description: Invalid request}
+        '401': {description: Missing or invalid service credential}
+        '403': {description: Caller lacks access to the internal route}
+        '503': {description: Catalog temporarily unavailable}
+components:
+  securitySchemes:
+    serviceBearer:
+      type: http
+      scheme: bearer
+      description: >-
+        Proposed caller-specific server credential, separate from customer JWT.
+        Source is CATALOG_SERVICE_TOKEN in Order; verify/rotate outside Git.
+  schemas:
+    BatchProduct:
+      type: object
+      additionalProperties: true
+      required: [id, sku, name, status, priceAmount, currency, version]
+      properties:
+        id: {type: string, format: uuid}
+        sku: {type: string, minLength: 1, maxLength: 64}
+        name: {type: string, minLength: 1, maxLength: 200}
+        status: {type: string, enum: [DRAFT, ACTIVE, DISCONTINUED]}
+        priceAmount: {type: string, pattern: '^[0-9]+$'}
+        currency: {type: string, enum: [VND]}
+        version: {type: integer, minimum: 0, maximum: 2147483647}

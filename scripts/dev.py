@@ -32,6 +32,11 @@ def main() -> int:
         cmd.add_argument("--test-stack", action="store_true")
         if action == "worker":
             cmd.add_argument("--once", action="store_true")
+            cmd.add_argument(
+                "--mode",
+                choices=["monitor", "outbox", "consumer", "all", "recovery"],
+                default="monitor",
+            )
     for action in ("lint", "typecheck", "test", "build"):
         cmd = commands.add_parser(action)
         cmd.add_argument("service", choices=[*SERVICES, "web", "backend", "all"])
@@ -96,7 +101,13 @@ def main() -> int:
                 module = SERVICES[service]
                 command = [python, "-m", module]
                 if args.action == "worker":
+                    if service != "order-service" and args.mode != "monitor":
+                        raise ValueError(
+                            "Business worker modes are currently implemented for Order only"
+                        )
                     command = [python, "-m", f"{module}.worker", "--run"]
+                    if service == "order-service":
+                        command.extend(["--mode", args.mode])
                     if args.once:
                         command.append("--once")
             execute(command, env=env)

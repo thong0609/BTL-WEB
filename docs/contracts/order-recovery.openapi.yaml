@@ -1,0 +1,367 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Order reconciliation dependencies - producer review draft",
+    "version": "0.1.0-draft",
+    "description": "DRAFT caller contract, not an implementation or agreement from Inventory/Payment. Each producer verifies its caller-specific Bearer credential. Original event envelopes are required to recover terminal outcomes without inventing events. A PENDING payment may expose operationId and commandMessageId as proof for a pending mirror only. No API is exposed through Gateway."
+  },
+  "security": [
+    {
+      "serviceBearer": []
+    }
+  ],
+  "paths": {
+    "/internal/reservations/by-order/{orderId}": {
+      "get": {
+        "x-owner-service": "inventory-service",
+        "summary": "Proposed read-only reconciliation snapshot with original result messages",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current state and original events in operation/version order; do not generate new messageIds for lookup",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventorySnapshot"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No known record. Does not prove that an earlier command was never executed."
+          },
+          "401": {
+            "description": "Invalid service credential"
+          },
+          "403": {
+            "description": "Caller not allowed"
+          },
+          "503": {
+            "description": "Unavailable; result remains unknown"
+          }
+        }
+      }
+    },
+    "/internal/payments/by-order/{orderId}": {
+      "get": {
+        "x-owner-service": "payment-service",
+        "summary": "Proposed read-only reconciliation snapshot with original result messages",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current state and original events in operation/version order; do not generate new messageIds for lookup",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentSnapshot"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No known record. Does not prove that an earlier command was never executed."
+          },
+          "401": {
+            "description": "Invalid service credential"
+          },
+          "403": {
+            "description": "Caller not allowed"
+          },
+          "503": {
+            "description": "Unavailable; result remains unknown"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "serviceBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Separate INVENTORY_SERVICE_TOKEN / PAYMENT_SERVICE_TOKEN, never the customer JWT."
+      }
+    },
+    "schemas": {
+      "JsonValue": {},
+      "MessageEnvelope": {
+        "properties": {
+          "messageId": {
+            "format": "uuid",
+            "title": "Messageid",
+            "type": "string"
+          },
+          "type": {
+            "pattern": "^[A-Z][A-Za-z0-9]{0,99}$",
+            "title": "Type",
+            "type": "string"
+          },
+          "version": {
+            "const": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "correlationId": {
+            "format": "uuid",
+            "title": "Correlationid",
+            "type": "string"
+          },
+          "causationId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Causationid"
+          },
+          "occurredAt": {
+            "format": "date-time",
+            "title": "Occurredat",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "messageId",
+          "type",
+          "version",
+          "correlationId",
+          "causationId",
+          "occurredAt",
+          "payload"
+        ],
+        "title": "MessageEnvelope",
+        "type": "object"
+      },
+      "InventorySnapshot": {
+        "properties": {
+          "orderId": {
+            "format": "uuid",
+            "title": "Orderid",
+            "type": "string"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/MessageEnvelope"
+            },
+            "maxItems": 100,
+            "title": "Events",
+            "type": "array"
+          },
+          "reservationId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reservationid"
+          },
+          "status": {
+            "enum": [
+              "RESERVED",
+              "RELEASED",
+              "COMMITTED",
+              "NOT_FOUND"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "maximum": 2147483647,
+            "minimum": 0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "orderId",
+          "events",
+          "reservationId",
+          "status",
+          "version"
+        ],
+        "title": "InventorySnapshot",
+        "type": "object"
+      },
+      "PaymentMethod": {
+        "enum": [
+          "COD",
+          "SIMULATED"
+        ],
+        "title": "PaymentMethod",
+        "type": "string"
+      },
+      "PaymentStatus": {
+        "enum": [
+          "PENDING",
+          "AWAITING_COLLECTION",
+          "SUCCEEDED",
+          "FAILED",
+          "REFUND_PENDING",
+          "REFUNDED",
+          "CANCELLED"
+        ],
+        "title": "PaymentStatus",
+        "type": "string"
+      },
+      "PaymentSnapshot": {
+        "properties": {
+          "orderId": {
+            "format": "uuid",
+            "title": "Orderid",
+            "type": "string"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/MessageEnvelope"
+            },
+            "maxItems": 100,
+            "title": "Events",
+            "type": "array"
+          },
+          "paymentId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paymentid"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version": {
+            "anyOf": [
+              {
+                "maximum": 2147483647,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMethod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "const": "VND",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "operationId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operationid"
+          },
+          "commandMessageId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commandmessageid"
+          }
+        },
+        "required": [
+          "orderId",
+          "events",
+          "paymentId",
+          "status",
+          "version",
+          "method",
+          "amount",
+          "currency",
+          "operationId",
+          "commandMessageId"
+        ],
+        "title": "PaymentSnapshot",
+        "type": "object"
+      }
+    }
+  }
+}

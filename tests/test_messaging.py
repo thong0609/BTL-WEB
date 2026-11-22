@@ -133,6 +133,16 @@ def test_cli_requires_apply_and_worker_is_opt_in():
 
 @pytest.mark.integration
 def test_rabbitmq_routing_ack_deadletter_smoke_and_cleanup(rabbitmq_test):
+    async def eventually_get(queue):
+        # basic.get returns QueueEmpty immediately; its timeout only bounds the RPC.
+        # Dead-lettering and requeue after channel close can complete asynchronously.
+        async with asyncio.timeout(5):
+            while True:
+                message = await queue.get(no_ack=False, fail=False, timeout=5)
+                if message is not None:
+                    return message
+                await asyncio.sleep(0.05)
+
     async def run():
         broker = Broker(config(rabbitmq_test["url"]))
         try:
@@ -170,7 +180,7 @@ def test_rabbitmq_routing_ack_deadletter_smoke_and_cleanup(rabbitmq_test):
             rejected = await inv.get(no_ack=False, timeout=5)
             await rejected.reject(requeue=False)
             dead = await channel.get_queue("inventory.commands.dead")
-            dead_message = await dead.get(no_ack=False, timeout=5)
+            dead_message = await eventually_get(dead)
             assert dead_message.headers["x-death"]
             await dead_message.ack()
             # Closing a separate unacked channel must redeliver, not lose, its message.
@@ -187,7 +197,7 @@ def test_rabbitmq_routing_ack_deadletter_smoke_and_cleanup(rabbitmq_test):
             aux_queue = await auxiliary.get_queue(name)
             unacked = await aux_queue.get(no_ack=False, timeout=5)
             await auxiliary.close()
-            redelivered = await queue.get(no_ack=False, timeout=5)
+            redelivered = await eventually_get(queue)
             assert redelivered.redelivered
             assert redelivered.message_id == unacked.message_id
             await redelivered.ack()
