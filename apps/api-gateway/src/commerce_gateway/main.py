@@ -8,6 +8,7 @@ from fastapi import FastAPI
 
 from commerce_backend_common.application import build_app
 from commerce_gateway.api import router
+from commerce_gateway.catalog import router as catalog_router
 from commerce_gateway.inventory import router as inventory_router
 from commerce_gateway.settings import Settings
 
@@ -46,4 +47,5 @@ def create_app(
     app = build_app(config, resources)
     app.include_router(router)
     app.include_router(inventory_router)
+    app.include_router(catalog_router)
     return app

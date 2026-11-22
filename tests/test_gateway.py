@@ -55,6 +55,59 @@ def test_inventory_gateway_does_not_expose_internal_paths():
     app = create_app(Settings(_env_file=None), transport=httpx.MockTransport(unexpected))
     with TestClient(app) as client:
         assert client.get("/api/v1/admin/inventory/internal/products/batch").status_code == 404
+        assert client.post("/internal/products/batch", json={"productIds": []}).status_code == 404
+
+
+@pytest.mark.parametrize(
+    "method,path,status,expects_auth",
+    [
+        ("GET", "/api/v1/categories?page=1", 200, False),
+        ("GET", "/api/v1/products?q=keyboard", 200, False),
+        ("GET", f"/api/v1/products/{uuid4()}", 200, False),
+        ("GET", "/api/v1/admin/categories", 200, True),
+        ("POST", "/api/v1/admin/categories", 201, True),
+        ("PATCH", f"/api/v1/admin/categories/{uuid4()}", 200, True),
+        ("GET", "/api/v1/admin/products", 200, True),
+        ("POST", "/api/v1/admin/products", 201, True),
+        ("GET", f"/api/v1/admin/products/{uuid4()}", 200, True),
+        ("PATCH", f"/api/v1/admin/products/{uuid4()}", 200, True),
+        ("POST", f"/api/v1/admin/products/{uuid4()}/images", 201, True),
+        ("DELETE", f"/api/v1/admin/products/{uuid4()}/images/{uuid4()}", 204, True),
+    ],
+)
+def test_catalog_forwarding(method, path, status, expects_auth):
+    seen = []
+
+    def upstream(request):
+        seen.append(request)
+        if status == 204:
+            return httpx.Response(204)
+        return httpx.Response(status, json={"example": "catalog-result"})
+
+    app = create_app(Settings(_env_file=None), transport=httpx.MockTransport(upstream))
+    with TestClient(app) as client:
+        response = client.request(
+            method,
+            path,
+            json={"name": "probe"},
+            headers={
+                "Authorization": "Bearer admin",
+                "X-User-Role": "ADMIN",
+                "Cookie": "private-cookie=secret",
+            },
+        )
+        assert response.status_code == status
+        if status != 204:
+            assert response.json() == {"example": "catalog-result"}
+    assert app.state.catalog_client.is_closed
+    request = seen[0]
+    assert request.url.host == "127.0.0.1" and request.url.port == 3002
+    if expects_auth:
+        assert request.headers["authorization"] == "Bearer admin"
+    else:
+        assert "authorization" not in request.headers
+    assert "x-user-role" not in request.headers and "cookie" not in request.headers
+    assert request.headers["x-request-id"] == response.headers["x-request-id"]
 
 
 def test_fixed_upstream_and_client_cleanup():

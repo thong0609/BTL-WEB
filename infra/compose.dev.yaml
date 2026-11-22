@@ -70,7 +70,10 @@ services:
       dockerfile: apps/catalog-service/Dockerfile
     env_file:
       - {path: ./.local/apps/catalog-service.env, required: false, format: raw}
-    environment: {HTTP_HOST: 0.0.0.0, HTTP_PORT: 3002}
+    environment:
+      HTTP_HOST: 0.0.0.0
+      HTTP_PORT: 3002
+      IDENTITY_BASE_URL: http://identity-service:3001
     ports: [127.0.0.1:3002:3002]
 
   inventory-service:
