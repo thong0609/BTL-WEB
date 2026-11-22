@@ -21,6 +21,7 @@ Backend FastAPI: pytest + HTTPX; test async dùng AnyIO và quản lý lifespan 
 | CUSTOMER_A, CUSTOMER_B | Hai tài khoản ACTIVE khác nhau |
 | ADMIN_A | Quản trị seed riêng; secret không commit |
 | USER_DISABLED | Không được login/refresh |
+| GOOGLE_STUB | ID Token ký bằng khóa RSA test, JWKS giả qua `httpx.MockTransport`; không gọi Google thật |
 | PROD_MOUSE | ACTIVE, 200.000 VND, tồn thực tế 10, giữ 0 |
 | PROD_KEYBOARD | ACTIVE, 500.000 VND, tồn 5 |
 | PROD_LAST | ACTIVE, 100.000 VND, tồn 1 |
@@ -62,6 +63,8 @@ Reset dữ liệu giữa test độc lập. Test song song dùng đơn/SKU/key r
 | AT-24 | Message lỗi schema/version, poison message | Retry phù hợp rồi DLQ; cảnh báo, không báo nghiệp vụ xong |
 | AT-25 | Restart Order/Inventory, worker claim hết lease | Phục hồi từ workflow/outbox; không mất việc hoặc làm lại tác dụng |
 | AT-26 | Backup DB/ảnh rồi restore môi trường riêng | Đơn, payment, tồn, ảnh và các công việc pending có thể đối chiếu/tiếp tục |
+| AT-27 | Đăng nhập Google: token hợp lệ; sai `aud`, sai `iss`, hết hạn, sai `nonce`, `alg` HS256 hoặc none; `state` sai; User DISABLED; email trùng tài khoản cũ | Hợp lệ tạo CUSTOMER ACTIVE và cấp phiên; mọi ca sai trả GOOGLE_AUTH_FAILED, không cấp phiên; email trùng trả ACCOUNT_LINK_REQUIRED, không gộp; kết quả popup/URL không chứa token. Popup với Google thật (COOP, `window.opener`) kiểm riêng bằng tay |
+| AT-28 | Liên kết Google: sai mật khẩu; ticket hết hạn hoặc của User khác; email Google lệch hoặc chưa xác minh; `sub` đã gắn User khác; đã có Google identity; hai liên kết cùng `sub` song song | REAUTH_FAILED 403 không kích hoạt refresh; GOOGLE_EMAIL_MISMATCH, GOOGLE_EMAIL_UNVERIFIED, GOOGLE_IDENTITY_TAKEN, GOOGLE_ALREADY_LINKED đúng; chỉ ca hợp lệ tạo một dòng user_identities; song song chỉ một bên thành công |
 
 ## 4. Kiểm tra bất biến sau các test lỗi
 
