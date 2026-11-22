@@ -11,6 +11,7 @@ from commerce_backend_common.database_lifespan import database_lifespan
 from commerce_backend_common.messaging_lifespan import broker_lifespan
 from commerce_inventory.api import router
 from commerce_inventory.db import SPEC
+from commerce_inventory.internal import router as internal_router
 from commerce_inventory.settings import Settings
 
 
@@ -44,4 +45,5 @@ def create_app(
         combine_lifespans(database_lifespan(config, SPEC), broker_lifespan(config), upstreams),
     )
     app.include_router(router)
+    app.include_router(internal_router)
     return app

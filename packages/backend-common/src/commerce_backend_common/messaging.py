@@ -8,7 +8,12 @@ from typing import Literal
 from uuid import UUID, uuid4
 
 import aio_pika
-from aio_pika.abc import AbstractExchange, AbstractRobustChannel
+from aio_pika.abc import (
+    AbstractExchange,
+    AbstractIncomingMessage,
+    AbstractQueue,
+    AbstractRobustChannel,
+)
 from pamqp.commands import Basic
 from pydantic import ConfigDict, Field, JsonValue, field_validator
 from yarl import URL
@@ -73,6 +78,21 @@ def parse_envelope(body: bytes, max_bytes: int = 262144) -> MessageEnvelope:
     if len(body) > max_bytes:
         raise BrokerError("Message exceeds the configured size limit")
     return MessageEnvelope.model_validate_json(body)
+
+
+async def receive_message(queue: AbstractQueue, *, timeout: float = 5) -> AbstractIncomingMessage:
+    """Wait for one message with manual ACK and a deadline.
+
+    AMQP basic.get returns immediately for an empty queue. Its timeout limits the
+    RPC, not message arrival; DLQ routing and redelivery may still be in flight.
+    Keep channel/connection errors visible instead of retrying every exception.
+    """
+    async with asyncio.timeout(timeout):
+        while True:
+            message = await queue.get(no_ack=False, fail=False, timeout=timeout)
+            if message is not None:
+                return message
+            await asyncio.sleep(0.05)
 
 
 def broker_url(settings: ServiceSettings) -> URL:

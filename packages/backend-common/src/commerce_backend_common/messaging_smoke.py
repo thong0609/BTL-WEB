@@ -4,7 +4,13 @@ from uuid import uuid4
 
 from aio_pika import ExchangeType
 
-from commerce_backend_common.messaging import Broker, BrokerError, MessageEnvelope, parse_envelope
+from commerce_backend_common.messaging import (
+    Broker,
+    BrokerError,
+    MessageEnvelope,
+    parse_envelope,
+    receive_message,
+)
 
 
 async def smoke_test(broker: Broker) -> str:
@@ -23,11 +29,9 @@ async def smoke_test(broker: Broker) -> str:
         bound = True
         envelope = MessageEnvelope.new("SmokeProbe", uuid4(), {"probe": True})
         await broker.publish(name, "probe", envelope)
-        incoming = await queue.get(
-            no_ack=False, timeout=broker.settings.broker_publish_timeout_seconds
+        incoming = await receive_message(
+            queue, timeout=broker.settings.broker_publish_timeout_seconds
         )
-        if incoming is None:
-            raise BrokerError("Smoke message was not received")
         async with incoming.process(requeue=False):
             received = parse_envelope(incoming.body, broker.settings.broker_max_message_bytes)
             if received != envelope or incoming.message_id != str(envelope.message_id):

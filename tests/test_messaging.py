@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import sys
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -19,6 +20,7 @@ from commerce_backend_common.messaging import (
     MessageUnroutable,
     broker_url,
     parse_envelope,
+    receive_message,
 )
 from commerce_backend_common.messaging_smoke import smoke_test
 from commerce_backend_common.messaging_topology import (
@@ -34,6 +36,32 @@ from commerce_backend_common.settings import ServiceSettings
 
 def config(url, **kwargs):
     return ServiceSettings(service_name="transport-test", http_port=3099, broker_url=url, **kwargs)
+
+
+def test_receive_waits_for_arrival_and_keeps_manual_ack():
+    async def run():
+        message = AsyncMock()
+        queue = AsyncMock()
+        queue.get.side_effect = [None, None, message]
+        assert await receive_message(queue, timeout=1) is message
+        assert queue.get.await_count == 3
+        queue.get.assert_awaited_with(no_ack=False, fail=False, timeout=1)
+        message.ack.assert_not_called()
+
+    asyncio.run(run())
+
+
+def test_receive_has_a_deadline_and_preserves_channel_errors():
+    async def run():
+        queue = AsyncMock()
+        queue.get.return_value = None
+        with pytest.raises(TimeoutError):
+            await receive_message(queue, timeout=0.03)
+        queue.get.side_effect = BrokerUnavailable("Channel unavailable")
+        with pytest.raises(BrokerUnavailable):
+            await receive_message(queue)
+
+    asyncio.run(run())
 
 
 def test_envelope_roundtrip_and_compatible_extra_fields():
@@ -148,7 +176,7 @@ def test_rabbitmq_routing_ack_deadletter_smoke_and_cleanup(rabbitmq_test):
                 for key in keys:
                     probe = MessageEnvelope.new("TransportProbe", uuid4(), {"key": key})
                     await broker.publish(COMMANDS, key, probe)
-                    message = await queue.get(no_ack=False, timeout=5)
+                    message = await receive_message(queue)
                     assert message.delivery_mode == DeliveryMode.PERSISTENT
                     assert parse_envelope(message.body) == probe
                     await message.ack()
@@ -157,7 +185,7 @@ def test_rabbitmq_routing_ack_deadletter_smoke_and_cleanup(rabbitmq_test):
                 await broker.publish(
                     EVENTS, key, MessageEnvelope.new("TransportProbe", uuid4(), {})
                 )
-                message = await events.get(no_ack=False, timeout=5)
+                message = await receive_message(events)
                 await message.ack()
             with pytest.raises(MessageUnroutable):
                 await broker.publish(
@@ -167,10 +195,10 @@ def test_rabbitmq_routing_ack_deadletter_smoke_and_cleanup(rabbitmq_test):
             await broker.publish(
                 COMMANDS, "inventory.reserve", MessageEnvelope.new("TransportProbe", uuid4(), {})
             )
-            rejected = await inv.get(no_ack=False, timeout=5)
+            rejected = await receive_message(inv)
             await rejected.reject(requeue=False)
             dead = await channel.get_queue("inventory.commands.dead")
-            dead_message = await dead.get(no_ack=False, timeout=5)
+            dead_message = await receive_message(dead)
             assert dead_message.headers["x-death"]
             await dead_message.ack()
             # Closing a separate unacked channel must redeliver, not lose, its message.
@@ -185,9 +213,9 @@ def test_rabbitmq_routing_ack_deadletter_smoke_and_cleanup(rabbitmq_test):
             await broker.publish(name, "probe", MessageEnvelope.new("RedeliveryProbe", uuid4(), {}))
             auxiliary = await broker.connection.channel()
             aux_queue = await auxiliary.get_queue(name)
-            unacked = await aux_queue.get(no_ack=False, timeout=5)
+            unacked = await receive_message(aux_queue)
             await auxiliary.close()
-            redelivered = await queue.get(no_ack=False, timeout=5)
+            redelivered = await receive_message(queue)
             assert redelivered.redelivered
             assert redelivered.message_id == unacked.message_id
             await redelivered.ack()
@@ -228,7 +256,7 @@ def test_broker_reconnect_after_server_restart(rabbitmq_test):
                 assert asyncio.get_running_loop().time() < deadline
                 await asyncio.sleep(0.5)
             queue = await (await broker.ready_channel()).get_queue("inventory.commands")
-            restored = await queue.get(no_ack=False, timeout=5)
+            restored = await receive_message(queue)
             assert restored.message_id == str(probe.message_id)
             await restored.ack()
             assert (await smoke_test(broker)).startswith("commerce.smoke.")

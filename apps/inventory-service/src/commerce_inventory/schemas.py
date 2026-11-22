@@ -1,9 +1,9 @@
-"""INV-01 public request/response schemas (camelCase on the wire)."""
+"""HTTP request/response schemas for admin, internal and upstream APIs (camelCase on the wire)."""
 
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from commerce_backend_common.schemas import ApiModel, UtcDatetime
 
@@ -63,3 +63,55 @@ class Page[T](ApiModel):
     page: int
     page_size: int
     total: int
+
+
+class AvailabilityRequest(ApiModel):
+    product_ids: list[UUID] = Field(min_length=1, max_length=50)
+
+    @field_validator("product_ids")
+    @classmethod
+    def unique_ids(cls, value: list[UUID]) -> list[UUID]:
+        if len(set(value)) != len(value):
+            raise ValueError("Duplicate products")
+        return value
+
+
+class Availability(ApiModel):
+    product_id: UUID
+    stocked: bool
+    available_quantity: int
+
+
+class AvailabilityResponse(ApiModel):
+    items: list[Availability]
+
+
+class ReservationLine(ApiModel):
+    product_id: UUID
+    quantity: int
+
+
+class ReservationView(ApiModel):
+    reservation_id: UUID
+    order_id: UUID
+    status: Literal["RESERVED", "RELEASED", "COMMITTED"]
+    version: int
+    items: list[ReservationLine]
+    created_at: UtcDatetime
+    updated_at: UtcDatetime
+    released_at: UtcDatetime | None
+    committed_at: UtcDatetime | None
+
+
+class Principal(BaseModel):
+    id: UUID
+    role: Literal["ADMIN", "CUSTOMER"]
+    status: Literal["ACTIVE", "DISABLED"]
+
+
+class CatalogProduct(BaseModel):
+    id: UUID
+
+
+class CatalogBatch(BaseModel):
+    items: list[CatalogProduct]

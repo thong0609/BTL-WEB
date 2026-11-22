@@ -1,4 +1,4 @@
-"""INV-01 use cases. The transaction owns counters, operation and audit movement."""
+"""HTTP use cases and queries; each operation owns its database transaction."""
 
 import hashlib
 import json
@@ -10,8 +10,25 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from commerce_backend_common.errors import ServiceError
-from commerce_inventory.models import InventoryOperation, StockItem, StockMovement
-from commerce_inventory.schemas import Movement, Page, Stock, StockAdjustment, StockCreate
+from commerce_inventory.models import (
+    InventoryOperation,
+    Reservation,
+    ReservationItem,
+    StockItem,
+    StockMovement,
+)
+from commerce_inventory.schemas import (
+    Availability,
+    AvailabilityRequest,
+    AvailabilityResponse,
+    Movement,
+    Page,
+    ReservationLine,
+    ReservationView,
+    Stock,
+    StockAdjustment,
+    StockCreate,
+)
 from commerce_inventory.upstreams import CatalogClient
 
 # Stable namespace: changing it would invalidate existing idempotency keys.
@@ -245,4 +262,55 @@ async def list_movements(
             page=page,
             page_size=page_size,
             total=total or 0,
+        )
+
+
+async def get_availability(
+    session: AsyncSession, body: AvailabilityRequest
+) -> AvailabilityResponse:
+    async with session.begin():
+        rows = (
+            await session.scalars(
+                select(StockItem).where(StockItem.product_id.in_(body.product_ids))
+            )
+        ).all()
+        lookup = {row.product_id: row.available_quantity for row in rows}
+        return AvailabilityResponse(
+            items=[
+                Availability(
+                    product_id=product_id,
+                    stocked=product_id in lookup,
+                    available_quantity=lookup.get(product_id, 0),
+                )
+                for product_id in body.product_ids
+            ]
+        )
+
+
+async def get_reservation_by_order(session: AsyncSession, order_id: UUID) -> ReservationView:
+    async with session.begin():
+        await session.execute(text("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"))
+        row = await session.scalar(select(Reservation).where(Reservation.order_id == order_id))
+        if row is None:
+            raise ServiceError(404, "NOT_FOUND", "Reservation does not exist")
+        lines = (
+            await session.scalars(
+                select(ReservationItem)
+                .where(ReservationItem.reservation_id == row.id)
+                .order_by(ReservationItem.product_id)
+            )
+        ).all()
+        return ReservationView(
+            reservation_id=row.id,
+            order_id=row.order_id,
+            status=row.status,
+            version=row.version,
+            items=[
+                ReservationLine(product_id=line.product_id, quantity=line.quantity)
+                for line in lines
+            ],
+            created_at=row.created_at,
+            updated_at=row.updated_at,
+            released_at=row.released_at,
+            committed_at=row.committed_at,
         )
