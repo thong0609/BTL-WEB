@@ -256,10 +256,16 @@ def test_postgres_bootstrap_migrations_and_runtime_isolation(postgres_test):
                         )
                     )
                 ).all()
+                from commerce_catalog import models as catalog_models  # noqa: F401
+                from commerce_catalog.db import Base as CatalogBase
                 from commerce_inventory import models  # noqa: F401
                 from commerce_inventory.db import Base as InventoryBase
 
                 expected = {(s.schema, "alembic_version") for s in DATABASE_SPECS}
+                expected.update(
+                    ("commerce_catalog", name)
+                    for name in (table.name for table in CatalogBase.metadata.tables.values())
+                )
                 expected.update(
                     ("commerce_inventory", name)
                     for name in (table.name for table in InventoryBase.metadata.tables.values())
