@@ -1,4 +1,5 @@
 import { ConnectionCheck } from "@/components/connection-check";
+import Link from "next/link";
 
 export default function HomePage() {
   return (
@@ -12,6 +13,7 @@ export default function HomePage() {
         Frontend <span aria-hidden="true">→</span> API Gateway <span aria-hidden="true">→</span> Catalog
       </div>
       <ConnectionCheck />
+      <Link href="/admin/inventory" className="mt-6 self-start rounded-lg bg-teal-800 px-5 py-3 text-sm font-semibold text-white hover:bg-teal-900">Mở quản trị tồn kho</Link>
       <p className="mt-6 text-sm leading-6 text-slate-500">
         Kết quả kiểm tra liveness của Catalog. Database, RabbitMQ và các luồng bán hàng chưa được kiểm tra tại đây.
       </p>
