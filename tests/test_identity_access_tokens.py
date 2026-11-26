@@ -109,6 +109,13 @@ def test_token_header_and_payload_carry_only_the_agreed_fields(
     assert payload["exp"] - payload["iat"] == 900
 
 
+def test_repr_of_issued_token_does_not_expose_the_token(service: AccessTokenService) -> None:
+    issued = service.issue(uuid4())
+
+    assert issued.token not in repr(issued)
+    assert issued.token not in str(issued)
+
+
 def test_key_id_is_stable_for_a_key_and_differs_between_keys(
     private_key: rsa.RSAPrivateKey, other_key: rsa.RSAPrivateKey
 ) -> None:

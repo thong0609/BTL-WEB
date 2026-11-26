@@ -12,7 +12,7 @@ caller's job; this module takes the key and the issuer as arguments.
 import base64
 import hashlib
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Final
 from uuid import UUID
@@ -43,7 +43,7 @@ class AccessTokenClaims:
 
 @dataclass(frozen=True, slots=True)
 class IssuedAccessToken:
-    token: str
+    token: str = field(repr=False)
     expires_in: int
     expires_at: datetime
 
